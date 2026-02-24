@@ -68,22 +68,6 @@
             border-color: #0ea5e9;
         }
     </style>
-    <!-- Chosen Palette: Ocean Science - Slate (Neutral), Sky Blue (Ocean/Primary), Teal (MPA), Orange (OECM) -->
-    <!-- Application Structure Plan: 
-         1. Header & Context: Centralized question mapping larval dispersal.
-         2. Simulation & Spatial Map: Side-by-side PLD slider with interactive species presets and dynamic HTML5 Canvas map showing physical connections.
-         3. The Connectivity Matrix: Heatmap of the 6x6 data.
-         4. Network Analysis Dashboard: Graph Theory metrics comparing MPAs and OECMs.
-         5. Synthesis/Implications: Tailored to spatial planning in this specific hypothetical network.
-    -->
-    <!-- Visualization & Content Choices:
-         1. Spatial Map: Custom HTML5 Canvas. Goal: Relationships/Visualize. Dynamically draws nodes (MPA/OECM colored) and bezier curve edges based on matrix weights. NO SVG used.
-         2. PLD Impact: Slider + Emoji Buttons. Goal: Change.
-         3. Connectivity Matrix: Plotly Heatmap (6x6). Goal: Relationships.
-         4. Source/Sink Balance: Chart.js Stacked Bar (6 nodes). Goal: Compare.
-         5. Graph Metrics: Chart.js Radar Chart. Goal: Compare single node profile.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-200">
 
@@ -92,7 +76,6 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <!-- Blank branding area as requested -->
                     <span class="text-xl font-bold text-slate-900 tracking-tight"></span>
                 </div>
                 <div class="hidden sm:flex space-x-8 items-center">
@@ -331,18 +314,15 @@
         const regionNames = locations.map(l => l.name);
         
         // Base Probability Matrix (6x6) for PLD = 30
-        // Rows = Source, Cols = Destination
         const baseMatrixTemplate = [
-            // MPA1, MPA2, MPA3, OECM1, OECM2, OECM3
-            [0.45,  0.15,  0.02, 0.08, 0.20,  0.10], // MPA 1 (Source)
-            [0.10,  0.60,  0.01, 0.04, 0.15,  0.10], // MPA 2 (Source)
-            [0.05,  0.01,  0.65, 0.20, 0.05,  0.04], // MPA 3 (Source)
-            [0.15,  0.04,  0.15, 0.50, 0.10,  0.06], // OECM 1 (Source)
-            [0.25,  0.10,  0.05, 0.10, 0.45,  0.05], // OECM 2 (Source)
-            [0.15,  0.10,  0.02, 0.05, 0.08,  0.60]  // OECM 3 (Source)
+            [0.45,  0.15,  0.02, 0.08, 0.20,  0.10], // MPA 1
+            [0.10,  0.60,  0.01, 0.04, 0.15,  0.10], // MPA 2
+            [0.05,  0.01,  0.65, 0.20, 0.05,  0.04], // MPA 3
+            [0.15,  0.04,  0.15, 0.50, 0.10,  0.06], // OECM 1
+            [0.25,  0.10,  0.05, 0.10, 0.45,  0.05], // OECM 2
+            [0.15,  0.10,  0.02, 0.05, 0.08,  0.60]  // OECM 3
         ];
 
-        // State variables
         let currentPLD = 30;
         let currentMatrix = [];
         let selectedRegionIndex = 0; 
@@ -350,7 +330,6 @@
 
         // --- 2. CORE LOGIC ---
 
-        // Function called by the species preset buttons
         window.setPLD = function(value) {
             document.getElementById('pld-slider').value = value;
             currentPLD = value;
@@ -358,23 +337,17 @@
         }
 
         function generateMatrix(pld) {
-            // Factor ranges from roughly -0.2 (low PLD) to +0.3 (high PLD)
             const factor = (pld - 30) / 100; 
             
             return baseMatrixTemplate.map((row, rIndex) => {
                 return row.map((val, cIndex) => {
                     if (rIndex === cIndex) {
-                        // Diagonal (Retention): Decreases as PLD goes up (larvae drift away)
                         let newVal = val - (factor * 1.8); 
                         return Math.max(0.05, Math.min(0.95, newVal));
                     } else {
-                        // Off-diagonal (Dispersal): Increases as PLD goes up
-                        // Add a distance/adjacency bias based on coordinates
                         const dx = locations[rIndex].x - locations[cIndex].x;
                         const dy = locations[rIndex].y - locations[cIndex].y;
                         const dist = Math.sqrt(dx*dx + dy*dy);
-                        
-                        // Closer islands connect faster when PLD increases
                         const distPenalty = dist / 100; 
                         let newVal = val + (factor * 0.8) - (distPenalty * 0.1) + (pld/600);
                         return Math.max(0.001, newVal);
@@ -395,7 +368,6 @@
                     retention: retention,
                     exportVal: exportSum,
                     importVal: importSum,
-                    // Simple proxy for betweenness
                     betweenness: (exportSum * importSum) * 15 
                 };
             });
@@ -412,15 +384,12 @@
 
         function resizeCanvas() {
             const container = spatialCanvas.parentElement;
-            // Handle high-DPI displays for crisp rendering
             const dpr = window.devicePixelRatio || 1;
             const rect = container.getBoundingClientRect();
-            
             spatialCanvas.width = rect.width * dpr;
             spatialCanvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            
-            drawNetworkMap(); // Redraw immediately after resize
+            drawNetworkMap();
         }
 
         function drawNetworkMap() {
@@ -431,23 +400,19 @@
             
             ctx.clearRect(0, 0, w, h);
 
-            // Calculate actual pixel coordinates from percentages
             const getCoords = (loc) => ({
                 x: (loc.x / 100) * w,
                 y: (loc.y / 100) * h
             });
 
-            // 1. Draw Edges (Connections)
-            const edgeThreshold = 0.03; // Only draw lines > 3% probability
-            
+            // 1. Draw Edges
+            const edgeThreshold = 0.03; 
             currentMatrix.forEach((row, sourceIdx) => {
                 row.forEach((prob, destIdx) => {
                     if (sourceIdx !== destIdx && prob > edgeThreshold) {
                         const source = getCoords(locations[sourceIdx]);
                         const dest = getCoords(locations[destIdx]);
                         
-                        // Use quadratic curves for visual flair instead of straight lines
-                        // Curve depends on direction to separate two-way traffic
                         const midX = (source.x + dest.x) / 2;
                         const midY = (source.y + dest.y) / 2;
                         const offset = (sourceIdx > destIdx) ? 20 : -20;
@@ -458,14 +423,12 @@
                         ctx.moveTo(source.x, source.y);
                         ctx.quadraticCurveTo(cpX, cpY, dest.x, dest.y);
                         
-                        // Style based on probability
-                        const alpha = Math.min(1, prob * 3); // Scale opacity
-                        ctx.strokeStyle = `rgba(14, 165, 233, ${alpha})`; // Sky blue
-                        ctx.lineWidth = prob * 15; // Thicker lines for higher prob
+                        const alpha = Math.min(1, prob * 3);
+                        ctx.strokeStyle = `rgba(14, 165, 233, ${alpha})`; 
+                        ctx.lineWidth = prob * 15; 
                         ctx.stroke();
 
-                        // Add a small directional indicator (arrow head logic simplified to a dot near destination)
-                        const t = 0.8; // Position along curve
+                        const t = 0.8; 
                         const arrowX = (1-t)*(1-t)*source.x + 2*(1-t)*t*cpX + t*t*dest.x;
                         const arrowY = (1-t)*(1-t)*source.y + 2*(1-t)*t*cpY + t*t*dest.y;
                         ctx.beginPath();
@@ -476,18 +439,17 @@
                 });
             });
 
-            // 2. Draw Nodes (Locations)
+            // 2. Draw Nodes
             locations.forEach((loc) => {
                 const pos = getCoords(loc);
                 const isSelected = (loc.id === selectedRegionIndex);
                 const retentionProb = currentMatrix[loc.id][loc.id];
                 
-                // Base shadow
                 ctx.shadowColor = 'rgba(0,0,0,0.2)';
                 ctx.shadowBlur = 10;
                 ctx.shadowOffsetY = 4;
 
-                // Node circle size based on retention (exaggerated multiplier for visibility)
+                // Node size exaggerated for better visibility
                 const radius = 10 + (retentionProb * 35);
 
                 ctx.beginPath();
@@ -495,10 +457,9 @@
                 ctx.fillStyle = loc.color;
                 ctx.fill();
                 
-                // Selection stroke
                 if(isSelected) {
                     ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#1e293b'; // slate-800
+                    ctx.strokeStyle = '#1e293b';
                     ctx.stroke();
                 } else {
                     ctx.lineWidth = 2;
@@ -506,12 +467,10 @@
                     ctx.stroke();
                 }
                 
-                // Reset shadow for text
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.shadowOffsetY = 0;
 
-                // Label Background
                 const label = loc.name;
                 ctx.font = 'bold 12px Inter, sans-serif';
                 const metrics = ctx.measureText(label);
@@ -520,8 +479,7 @@
                 ctx.roundRect(pos.x - metrics.width/2 - 6, pos.y + radius + 4, metrics.width + 12, 18, 4);
                 ctx.fill();
 
-                // Label Text
-                ctx.fillStyle = '#334155'; // slate-700
+                ctx.fillStyle = '#334155';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 ctx.fillText(label, pos.x, pos.y + radius + 7);
@@ -533,16 +491,15 @@
         let sourceSinkChart, radarChart;
 
         function initCharts() {
-            // Stacked Bar
             const ctxSourceSink = document.getElementById('sourceSinkChart').getContext('2d');
             sourceSinkChart = new Chart(ctxSourceSink, {
                 type: 'bar',
                 data: {
                     labels: regionNames,
                     datasets: [
-                        { label: 'Export (Source)', data: [], backgroundColor: '#38bdf8', borderRadius: 2 }, // Sky 400
-                        { label: 'Import (Sink)', data: [], backgroundColor: '#818cf8', borderRadius: 2 },   // Indigo 400
-                        { label: 'Retention', data: [], backgroundColor: '#cbd5e1', borderRadius: 2 }        // Slate 300
+                        { label: 'Export (Source)', data: [], backgroundColor: '#38bdf8', borderRadius: 2 }, 
+                        { label: 'Import (Sink)', data: [], backgroundColor: '#818cf8', borderRadius: 2 },   
+                        { label: 'Retention', data: [], backgroundColor: '#cbd5e1', borderRadius: 2 }        
                     ]
                 },
                 options: {
@@ -558,7 +515,6 @@
                 }
             });
 
-            // Radar Chart
             const ctxRadar = document.getElementById('radarChart').getContext('2d');
             radarChart = new Chart(ctxRadar, {
                 type: 'radar',
@@ -567,7 +523,7 @@
                     datasets: [{
                         label: 'Metrics',
                         data: [0,0,0,0],
-                        backgroundColor: 'rgba(20, 184, 166, 0.2)', // Teal 500 alpha
+                        backgroundColor: 'rgba(20, 184, 166, 0.2)', 
                         borderColor: '#14b8a6',
                         pointBackgroundColor: '#14b8a6',
                         pointHoverRadius: 6
@@ -592,11 +548,9 @@
         // --- 5. UPDATE CYCLE ---
 
         function updateAll(pld) {
-            // 1. Data Math
             currentMatrix = generateMatrix(pld);
             const metrics = calculateMetrics(currentMatrix);
             
-            // 2. UI Updates (Text/Sliders)
             document.getElementById('pld-value').innerText = pld;
             const insightBox = document.getElementById('pld-insight');
             
@@ -611,20 +565,19 @@
                 insightBox.className = "bg-teal-50 border-l-4 border-teal-500 p-4 rounded text-sm text-teal-900 leading-relaxed transition-colors";
             }
 
-            // 3. Update Custom Canvas Map
             drawNetworkMap();
 
-            // 4. Update Matrix Heatmap (Plotly 6x6)
+            // Reversed autorange Y-axis added here
             const dataTrace = [{
                 z: currentMatrix,
                 x: regionNames,
                 y: regionNames,
                 type: 'heatmap',
                 colorscale: [
-                    ['0.0', '#f8fafc'], // slate-50
-                    ['0.2', '#bae6fd'], // sky-200
-                    ['0.5', '#0ea5e9'], // sky-500
-                    ['1.0', '#0369a1']  // sky-800
+                    ['0.0', '#f8fafc'],
+                    ['0.2', '#bae6fd'],
+                    ['0.5', '#0ea5e9'],
+                    ['1.0', '#0369a1']
                 ],
                 showscale: true,
                 hovertemplate: '<b>Source:</b> %{y}<br><b>Dest:</b> %{x}<br><b>Prob:</b> %{z:.3f}<extra></extra>'
@@ -640,7 +593,6 @@
             
             Plotly.newPlot('matrixChart', dataTrace, layout, {responsive: true, displayModeBar: false});
 
-            // 5. Update KPI Numbers
             const totalConnections = currentMatrix.flat().filter(x => x > 0.05).length;
             const avgRetention = (metrics.reduce((acc, m) => acc + m.retention, 0) / locations.length * 100).toFixed(1);
             
@@ -659,13 +611,11 @@
             document.getElementById('metric-retention').innerText = avgRetention + "%";
             document.getElementById('metric-link').innerText = maxLink;
 
-            // 6. Update Bar Chart
             sourceSinkChart.data.datasets[0].data = metrics.map(m => m.exportVal);
             sourceSinkChart.data.datasets[1].data = metrics.map(m => m.importVal);
             sourceSinkChart.data.datasets[2].data = metrics.map(m => m.retention);
             sourceSinkChart.update();
 
-            // 7. Update Radar & Description
             updateRadar(selectedRegionIndex, metrics);
         }
 
@@ -673,10 +623,9 @@
             const m = metrics[index];
             const loc = locations[index];
             
-            // Normalize for visual radar layout
             const data = [
                 m.retention, 
-                m.exportVal * 1.5, // Scaled for visibility
+                m.exportVal * 1.5, 
                 m.importVal * 1.5, 
                 Math.min(1, m.betweenness) 
             ];
@@ -688,7 +637,6 @@
             radarChart.data.datasets[0].pointBackgroundColor = loc.color;
             radarChart.update();
 
-            // Dynamic Description tailored to MPA/OECM
             const roleDesc = document.getElementById('role-description');
             let text = `<div class="font-bold mb-1 flex items-center">
                             <span class="w-3 h-3 rounded-full inline-block mr-2" style="background-color: ${loc.color}"></span>
@@ -714,8 +662,6 @@
             }
             
             roleDesc.innerHTML = text;
-
-            // Highlight selected node on the map
             drawNetworkMap();
         }
 
@@ -725,7 +671,6 @@
             initMapCanvas();
             initCharts();
             
-            // Populate Dropdown
             const select = document.getElementById('region-selector');
             locations.forEach((l, i) => {
                 const opt = document.createElement('option');
@@ -734,10 +679,8 @@
                 select.appendChild(opt);
             });
 
-            // Initial Draw
             updateAll(30);
 
-            // Event Listeners
             document.getElementById('pld-slider').addEventListener('input', (e) => {
                 currentPLD = parseInt(e.target.value);
                 updateAll(currentPLD);
@@ -753,7 +696,6 @@
         function scrollToSection(id) {
             document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         }
-
     </script>
 </body>
 </html>
