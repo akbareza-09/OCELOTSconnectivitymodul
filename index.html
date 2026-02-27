@@ -7,669 +7,685 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .chart-container {
             position: relative;
             width: 100%;
             max-width: 100%;
             margin-left: auto;
             margin-right: auto;
-            height: 350px;
-            max-height: 400px;
+            height: 320px;
+            max-height: 350px;
         }
         .map-container {
             position: relative;
             width: 100%;
             aspect-ratio: 16/9;
-            background: #e0f2fe; /* Light ocean blue */
+            background: #e0f2fe;
             border-radius: 0.75rem;
             overflow: hidden;
             border: 1px solid #bae6fd;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
         }
-        @media (min-width: 768px) {
-            .chart-container { height: 400px; }
-        }
-        /* Custom range slider styling */
-        input[type=range] {
-            -webkit-appearance: none;
+        canvas#map-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            background: transparent;
+            height: 100%;
         }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 24px;
-            width: 24px;
-            border-radius: 50%;
-            background: #0284c7;
-            cursor: pointer;
-            margin-top: -10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 2px solid white;
-            transition: transform 0.1s;
-        }
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .species-btn {
+        
+        /* Custom styling for quiz options */
+        .quiz-option {
             transition: all 0.2s ease;
         }
-        .species-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-color: #0ea5e9;
+        .quiz-option:hover:not(:disabled) {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .quiz-option.correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+        .quiz-option.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-200">
+<body class="text-slate-800">
 
-    <!-- Navigation -->
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <span class="text-xl font-bold text-slate-900 tracking-tight"></span>
-                </div>
-                <div class="hidden sm:flex space-x-8 items-center">
-                    <button onclick="scrollToSection('simulation')" class="text-slate-500 hover:text-sky-600 px-1 py-2 text-sm font-semibold transition-colors">Spatial Network</button>
-                    <button onclick="scrollToSection('matrix')" class="text-slate-500 hover:text-sky-600 px-1 py-2 text-sm font-semibold transition-colors">Matrix Data</button>
-                    <button onclick="scrollToSection('analysis')" class="text-slate-500 hover:text-sky-600 px-1 py-2 text-sm font-semibold transition-colors">Node Roles</button>
-                </div>
-            </div>
+    <!-- Header Section -->
+    <header class="bg-gradient-to-r from-cyan-800 to-blue-900 text-white py-10 px-6 shadow-md">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl md:text-5xl font-bold mb-3 leading-tight">Marine Connectivity:<br/></h1>
+            <p class="text-base md:text-lg font-light text-cyan-100 max-w-3xl">
+                Explore how the Pelagic Larval Duration (PLD) affects the dispersal of marine species between Marine Protected Areas (MPAs), Other Effective Area-based Conservation Measures (OECMs), and unprotected areas.
+            </p>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-
-        <!-- 1. Introduction Section -->
-        <section id="intro" class="text-center max-w-4xl mx-auto">
-            <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight">How does larval dispersal connect MPAs and OECMs in the seascape?</h1>
-            <p class="text-lg text-slate-600 leading-relaxed mb-4">
-                Marine connectivity can be visualized in many ways—from complex mathematical matrices and graph theory metrics to interactive spatial maps. Here, we'll dive deeper into how these visual tools work together to tell a story about ocean life.
-            </p>
-            <p class="text-lg text-slate-600 leading-relaxed">
-                In this hypothetical case, we will see the connections between <strong>3 Marine Protected Areas (MPAs)</strong> and <strong>3 Other Effective area-based Conservation Measures (OECMs)</strong> using a simulated dispersal model. Adjust the biological parameters to see how ocean currents bind these conservation zones together!
-            </p>
-        </section>
-
-        <!-- 2. Simulation & Spatial Map -->
-        <section id="simulation" class="scroll-mt-20">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <main class="max-w-6xl mx-auto px-6 py-8 space-y-10">
+        
+        <!-- Controls Section -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="flex-1 w-full">
+                    <h2 class="text-2xl font-bold mb-2">Pelagic Larval Duration (PLD)</h2>
+                    <p class="text-sm text-slate-600 mb-5 leading-relaxed">
+                        <strong>Pelagic Larval Duration (PLD)</strong> is the amount of time a marine species spends as a free-swimming or drifting larva in the open ocean before settling down into its adult habitat. 
+                        Adjust the slider below to simulate species with different larval lifespans. Longer PLDs allow larvae to drift further on ocean currents!
+                    </p>
                     
-                    <!-- Controls -->
-                    <div class="lg:col-span-4 flex flex-col justify-center space-y-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900 mb-2">Simulate Dispersal</h2>
-                            <p class="text-sm text-slate-500 mb-4">
-                                Adjust the <strong>Pelagic Larval Duration (PLD)</strong> to simulate different species. Watch how the spatial network connections (lines) react on the map.
-                            </p>
-                        </div>
-
-                        <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                            <label for="pld-slider" class="block text-sm font-medium text-slate-700 mb-4">
-                                Larval Duration (Days): <span id="pld-value" class="text-sky-600 font-bold text-2xl ml-2">30</span>
-                            </label>
-                            <input type="range" id="pld-slider" min="10" max="60" value="30" step="1" class="w-full">
-                            <div class="flex justify-between text-xs text-slate-400 mt-3 font-semibold uppercase tracking-wider mb-6">
-                                <span>10d (Local)</span>
-                                <span>60d (Widespread)</span>
-                            </div>
-
-                            <!-- Interactive Species References -->
-                            <div class="border-t border-slate-200 pt-4">
-                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Species Reference (Click to apply)</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <button onclick="setPLD(10)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🦪 Giant Clam (10d)</button>
-                                    <button onclick="setPLD(24)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🐟 Rabbitfish (24d)</button>
-                                    <button onclick="setPLD(28)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🐠 Coral Trout (28d)</button>
-                                    <button onclick="setPLD(35)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🐟 Snapper (35d)</button>
-                                    <button onclick="setPLD(45)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🐙 Octopus (45d)</button>
-                                    <button onclick="setPLD(60)" class="species-btn px-2 py-1.5 bg-white border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:text-sky-700">🦞 Spiny Lobster (60d)</button>
-                                </div>
-                                <div class="mt-3 text-[10px] text-slate-500 italic leading-relaxed bg-slate-50/50 p-2 rounded border border-slate-100">
-                                    <strong>* Scientific Note:</strong> These PLD values are general approximations derived from literature for illustrative purposes. In reality, larval duration and actual dispersal networks vary significantly depending on localized oceanographic currents, water temperature, seasonal spawning dynamics, and active larval swimming behavior.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="pld-insight" class="bg-sky-50 border-l-4 border-sky-500 p-4 rounded text-sm text-sky-900 leading-relaxed">
-                            Initializing simulation...
-                        </div>
-
-                        <!-- Legend -->
-                        <div class="flex items-center space-x-6 pt-2">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-4 h-4 rounded-full bg-teal-500"></div>
-                                <span class="text-xs font-bold text-slate-600">MPA</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-4 h-4 rounded-full bg-orange-400"></div>
-                                <span class="text-xs font-bold text-slate-600">OECM</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-4 h-1 bg-sky-400 opacity-60"></div>
-                                <span class="text-xs font-bold text-slate-600">Larval Flow</span>
-                            </div>
+                    <div class="relative w-full mb-6">
+                        <input type="range" id="pld-slider" min="5" max="60" value="30" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-cyan-600">
+                        <div class="flex justify-between text-xs font-semibold text-slate-400 mt-2 px-1">
+                            <span>5 days</span>
+                            <span>30 days</span>
+                            <span>60 days</span>
                         </div>
                     </div>
 
-                    <!-- Spatial Network Map (Custom Canvas) -->
-                    <div class="lg:col-span-8 flex flex-col">
-                        <h3 class="text-xl font-bold text-slate-800 mb-3">Spatial Network Map</h3>
-                        <div class="map-container relative shadow-inner flex-grow">
-                            <canvas id="spatialMapCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
-                            <div class="absolute bottom-3 right-3 bg-white/80 backdrop-blur px-3 py-1 rounded text-xs font-mono text-slate-500 border border-slate-200 shadow-sm">
-                                Hypothetical Spatial Layout
-                            </div>
+                    <!-- Species Reference Block -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3">Example of Tropical Species References:</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-slate-600 mb-3">
+                            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded shadow-sm border border-slate-100">🐟 Rabbitfish<br><span class="font-mono font-bold text-cyan-600 text-xs">18-45d</span></div>
+                            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded shadow-sm border border-slate-100">🐠 Coral Trout<br><span class="font-mono font-bold text-cyan-600 text-xs">25-50d</span></div>
+                            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded shadow-sm border border-slate-100">🐟 Snapper<br><span class="font-mono font-bold text-cyan-600 text-xs">25-40d</span></div>
+                            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded shadow-sm border border-slate-100">🐙 Octopus<br><span class="font-mono font-bold text-cyan-600 text-xs">30-60d</span></div>
                         </div>
-                        <div class="mt-4 bg-sky-50 border border-sky-100 rounded-lg p-4 text-sm text-slate-700 leading-relaxed">
-                            <strong>🤔 How to read this map:</strong> This visualization helps us instantly spot the physical pathways created by ocean currents.
-                            <ul class="list-disc pl-5 mt-2 space-y-2">
-                                <li><strong>Watch the lines:</strong> Notice how they change when you adjust the slider? Thicker, darker lines mean a stronger flow of larvae between two locations. Do you see the connections bridging the strictly protected MPAs (teal) to the sustainably managed OECMs (orange)?</li>
-                                <li><strong>Watch the circles:</strong> A larger circle means more larvae stay at their home reef (local retention). Short PLDs create large circles because babies settle quickly, while long PLDs shrink them as larvae drift far away.</li>
-                            </ul>
-                        </div>
+                        <p class="text-[11px] text-slate-500 italic leading-tight">
+                            * <strong>Scientific Note:</strong> These PLD values are general approximations derived from literature for illustrative purposes. In reality, larval duration and actual dispersal networks vary significantly depending on localized oceanographic currents, water temperature, seasonal spawning dynamics, and active larval swimming behavior.
+                        </p>
                     </div>
 
                 </div>
-            </div>
-        </section>
-
-        <!-- 3. The Connectivity Matrix -->
-        <section id="matrix" class="scroll-mt-20">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <div class="lg:col-span-1 space-y-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Probability Matrix</h2>
-                        <p class="text-sm text-slate-600 mt-2">
-                            The raw data driving the map. Rows show where larvae start (Source), columns show where they settle (Destination). 
-                            Darker blues indicate a higher probability of connection. The diagonal line shows larvae staying at their home reef.
-                        </p>
-                    </div>
-
-                    <!-- Key Stats -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Avg Self-Recruitment</div>
-                            <div id="metric-retention" class="text-2xl font-black text-slate-800">--%</div>
-                        </div>
-                        <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Active Corridors</div>
-                            <div id="metric-connections" class="text-2xl font-black text-slate-800">--</div>
-                        </div>
-                        <div class="col-span-2 bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Strongest Link</div>
-                            <div id="metric-link" class="text-lg font-bold text-sky-600 truncate">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                    <div id="matrixChart" class="w-full h-[380px]"></div>
-                    <div class="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 leading-relaxed mx-2 mb-2">
-                        <strong>🤔 How to read this matrix:</strong> Reading a matrix might look intimidating, but it's just a grid of probabilities! Look at the row on the left (where larvae start) and follow it to a column (where they settle). A darker blue square means a higher chance of connection. 
-                        <br><br>
-                        See the diagonal line of squares going from top-left to bottom-right? That represents larvae staying at their home reef ('self-recruitment'). <strong>Try setting the slider to 10 days:</strong> this diagonal will turn dark blue because most babies stay home. <strong>Now slide it to 60 days:</strong> watch how that diagonal fades to white as larvae are swept away to other reefs!
-                    </div>
+                <div class="bg-cyan-50 border border-cyan-100 rounded-lg p-6 text-center min-w-[200px] shadow-inner">
+                    <div class="text-sm uppercase tracking-wide text-cyan-800 font-bold mb-1">Current PLD</div>
+                    <div class="text-5xl font-black text-cyan-600 font-mono"><span id="pld-value">30</span> <span class="text-xl text-cyan-500 font-medium">days</span></div>
                 </div>
             </div>
         </section>
 
-        <!-- 4. Graph Theory Analysis -->
-        <section id="analysis" class="scroll-mt-20">
-            <h2 class="text-2xl font-bold text-slate-900 mb-6">Graph Theory: Node Roles</h2>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Source vs Sink Dynamics -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                    <div class="flex justify-between items-end mb-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-800">Source / Sink Balance</h3>
-                            <p class="text-xs text-slate-500">Total probability export vs import</p>
-                        </div>
-                    </div>
-                    <div class="chart-container h-64">
-                        <canvas id="sourceSinkChart"></canvas>
-                    </div>
-                    <div class="mt-6 bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm text-slate-700 leading-relaxed">
-                        <strong>🤔 How to read this chart:</strong> Think of 'Sources' (light blue) as the givers and 'Sinks' (purple) as the receivers of the seascape. Which location has the tallest light blue bar? That's your champion exporter! A healthy network needs strong sources to supply larvae to the sinks, ensuring vulnerable reefs can recover after storms or bleaching events.
-                    </div>
-                </div>
-
-                <!-- Node Role Inspector -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-slate-800">Individual Profile</h3>
-                        <select id="region-selector" class="text-sm border border-slate-300 rounded-md shadow-sm focus:border-sky-500 focus:ring focus:ring-sky-200 p-2 bg-slate-50 font-semibold cursor-pointer">
-                            <!-- Options populated by JS -->
-                        </select>
-                    </div>
-                    <div class="chart-container flex-grow h-64">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                    <div id="role-description" class="mt-4 text-sm text-slate-800 bg-slate-50 p-4 rounded-t-lg border border-slate-200 border-b-0">
-                        Select a location to view its specific graph theory metrics.
-                    </div>
-                    <div class="bg-teal-50 border border-teal-100 rounded-b-lg p-4 text-sm text-slate-700 leading-relaxed">
-                        <strong>🤔 How to read this profile:</strong> This 'spider web' chart gives you a quick snapshot of a single location's personality. Is the shape pulled heavily towards 'Export Potential'? Then it's a vital nursery! Try changing the species slider: what happens to a node's 'Network Bridge' score when you switch from a Giant Clam to a Spiny Lobster?
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 5. Management Implications -->
-        <section class="bg-slate-900 text-white rounded-2xl p-8 lg:p-10 relative overflow-hidden shadow-xl">
-            <!-- Decorative background elements -->
-            <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-sky-500 opacity-20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-teal-500 opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+        <!-- Visualization Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <div class="relative z-10">
-                <h2 class="text-2xl font-bold mb-6 flex items-center">
-                    <span class="bg-white/10 p-2 rounded-lg mr-3">💡</span> Spatial Planning Implications
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-white/5 p-6 rounded-xl border border-white/10">
-                        <h4 class="font-bold text-teal-300 mb-3 text-lg">MPA Seeding Efficiency</h4>
-                        <p id="mgmt-mpa" class="text-slate-300 text-sm leading-relaxed">
-                            Analyzing how well <strong>MPA 1</strong>, <strong>MPA 2</strong>, and <strong>MPA 3</strong> supply larvae to surrounding areas. At the currently selected PLD, we evaluate if these strictly protected zones are effectively acting as demographic sources for the broader network, exporting more larvae than they import.
-                        </p>
+            <!-- Map Visualization -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
+                <h2 class="text-xl font-bold mb-1">Spatial Network Map</h2>
+                <div class="mt-1 flex gap-4 text-xs font-semibold text-slate-600 mb-4">
+                    
+                    <div class="relative group cursor-help flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-blue-600"></span> MPA
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                            MPAs are formally designated for biodiversity.
+                            <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
                     </div>
-                    <div class="bg-white/5 p-6 rounded-xl border border-white/10">
-                        <h4 class="font-bold text-orange-300 mb-3 text-lg">OECM Connectivity Integration</h4>
-                        <p id="mgmt-oecm" class="text-slate-300 text-sm leading-relaxed">
-                            Evaluating if <strong>OECM 1</strong>, <strong>OECM 2</strong>, and <strong>OECM 3</strong> function as vital stepping stones. Ensuring fisheries in these areas are managed sustainably is crucial, especially if graph analysis shows they receive heavy larval subsidies from the upstream MPAs.
+                    
+                    <div class="relative group cursor-help flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-teal-500"></span> OECM
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                            OECMs deliver effective conservation as a secondary benefit to other purposes like sustainable use or cultural sites.
+                            <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
+                    </div>
+                    
+                    <div class="relative group cursor-help flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span> Unprotected
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                            An area lacking any formal designation as an MPA or OECM.
+                            <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <div class="map-container flex-grow" id="map-wrapper">
+                    <canvas id="map-canvas"></canvas>
+                </div>
+                
+                <!-- Helper Guide -->
+                <div class="mt-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg text-sm text-blue-900 leading-relaxed">
+                    <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this map:</h3>
+                    <p class="mb-1 text-blue-800">This visualization helps us instantly spot the physical pathways created by ocean currents.</p>
+                    <ul class="list-disc pl-5 space-y-1 text-blue-800 text-xs mt-2">
+                        <li><strong>Watch the lines (Edges):</strong> Notice how they change when you adjust the slider? Thicker, darker lines mean a stronger flow of larvae between two locations. Do you see the connections between them?</li>
+                        <li><strong>Watch the circles (Nodes):</strong> Each circle represents a physical location. A larger circle means more larvae stay at their home reef (local retention), while long PLDs shrink them as larvae drift far away.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Matrix Visualization -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
+                <h2 class="text-xl font-bold mb-2">Connectivity Probability Matrix</h2>
+                <div id="heatmap-div" class="flex-grow w-full min-h-[250px]"></div>
+                
+                <!-- Helper Guide -->
+                <div class="mt-2 bg-teal-50 border-l-4 border-teal-500 p-3 rounded-r-lg text-sm text-teal-900 leading-relaxed">
+                    <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this matrix:</h3>
+                    <p class="mb-1 text-teal-800">This grid shows the exact mathematical probability of larvae moving from one place to another.</p>
+                    <ul class="list-disc pl-5 space-y-1 text-teal-800 text-xs mt-2">
+                        <li><strong>Read Row to Column:</strong> Pick a "Source" location on the left side, and follow its row across to see how much it gives to a "Destination" on the bottom.</li>
+                        <li><strong>Watch the Colors:</strong> White means zero connection. The darker the teal, the stronger the connection!</li>
+                        <li><strong>The Diagonal Line:</strong> The squares running diagonally down the middle show larvae that stay at home (Self-Retention).</li>
+                    </ul>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Node Analysis Section -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <h2 class="text-2xl font-bold mb-6">Regional Role Analysis</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <div class="col-span-1 space-y-6">
+                    <div>
+                        <label for="region-selector" class="block text-sm font-semibold text-slate-700 mb-2">Select a Region to Analyze:</label>
+                        <select id="region-selector" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm font-semibold rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-3 outline-none shadow-sm"></select>
+                    </div>
+                    
+                    <div class="bg-slate-50 rounded-lg p-5 border border-slate-200 shadow-inner">
+                        <h3 class="font-bold text-slate-800 mb-2">Ecological Role</h3>
+                        <p id="role-description" class="text-sm text-slate-600 leading-relaxed">Select a region to view its role in the network.</p>
+                    </div>
+
+                    <!-- Helper Guide -->
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-3 rounded-r-lg text-sm text-purple-900 mt-4">
+                        <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this chart:</h3>
+                        <p class="text-purple-800 text-xs">
+                            This "Spider Chart" builds a unique profile for the selected location. 
+                            If the shape spikes toward <strong>Larval Export</strong>, it's acting as a vital source feeding the network. 
+                            If it spikes toward <strong>Self-Retention</strong>, it acts as a closed, self-sustaining loop.
                         </p>
                     </div>
                 </div>
+                
+                <div class="col-span-1 md:col-span-2 flex flex-col items-center">
+                    <div class="chart-container">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
+
+                    <!-- Tooltip Legends -->
+                    <div class="mt-6 w-full">
+                        <p class="text-[11px] text-purple-600 font-bold mb-3 text-center uppercase tracking-wider">
+                            👆 Hover over a metric below to reveal its definition
+                        </p>
+                        <div class="flex flex-wrap justify-center gap-2 text-xs">
+                            
+                            <div class="relative group cursor-help">
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white">Larval Export (Source)</span>
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                                    The volume of larvae this reef successfully sends out on ocean currents to populate other regions.
+                                    <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="relative group cursor-help">
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white">Larval Import (Sink)</span>
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                                    The amount of larvae this location receives from other reefs, acting as a crucial nursery or "sink".
+                                    <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="relative group cursor-help">
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white">Self-Retention</span>
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                                    The proportion of larvae that stay and settle directly at their home reef without drifting away.
+                                    <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="relative group cursor-help">
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white">Network Centrality</span>
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                                    How critical this specific location is as a "stepping-stone" or hub that connects the entire seascape together.
+                                    <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                            </div>
+
+                            <div class="relative group cursor-help">
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white">OECM Synergy</span>
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                                    The combined conservation value of this area acting as a sustainably managed buffer within the protected network.
+                                    <svg class="absolute text-slate-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUIZ SECTION (Compacted) -->
+        <section id="quiz" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-8 mb-8">
+            <div class="bg-slate-800 p-5 md:px-8 text-white">
+                <h2 class="text-2xl font-bold mb-1">Test Your Knowledge</h2>
+                <p class="text-sm text-slate-300">Interact with the maps and sliders above to discover the answers to these questions.</p>
+            </div>
+            <div id="quiz-container" class="p-5 md:p-8 space-y-5">
+                <!-- Quiz questions dynamically injected here via JS to stay compact -->
             </div>
         </section>
 
     </main>
 
-    <!-- Application Logic -->
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm">
+        <p>© 2026 Marine Conservation Initiative. For educational purposes.</p>
+    </footer>
+
     <script>
-        // --- 1. DATA & STATE ---
-        
-        // 6 Nodes representing hypothetical seascape locations
+        // --- 1. DATA DEFINITIONS ---
         const locations = [
-            { id: 0, name: 'MPA 1',  type: 'MPA',   color: '#14b8a6', x: 50, y: 45 }, // Center (Teal)
-            { id: 1, name: 'MPA 2',  type: 'MPA',   color: '#14b8a6', x: 80, y: 60 }, // East
-            { id: 2, name: 'MPA 3',  type: 'MPA',   color: '#14b8a6', x: 15, y: 35 }, // Far West
-            { id: 3, name: 'OECM 1', type: 'OECM',  color: '#fb923c', x: 30, y: 40 }, // West (Orange)
-            { id: 4, name: 'OECM 2', type: 'OECM',  color: '#fb923c', x: 55, y: 75 }, // South
-            { id: 5, name: 'OECM 3', type: 'OECM',  color: '#fb923c', x: 60, y: 20 }  // North
-        ];
-        
-        const regionNames = locations.map(l => l.name);
-        
-        // Base Probability Matrix (6x6) for PLD = 30
-        const baseMatrixTemplate = [
-            [0.45,  0.15,  0.02, 0.08, 0.20,  0.10], // MPA 1
-            [0.10,  0.60,  0.01, 0.04, 0.15,  0.10], // MPA 2
-            [0.05,  0.01,  0.65, 0.20, 0.05,  0.04], // MPA 3
-            [0.15,  0.04,  0.15, 0.50, 0.10,  0.06], // OECM 1
-            [0.25,  0.10,  0.05, 0.10, 0.45,  0.05], // OECM 2
-            [0.15,  0.10,  0.02, 0.05, 0.08,  0.60]  // OECM 3
+            { name: "North Reef", type: "MPA", x: 20, y: 80 },
+            { name: "Coastal Bay", type: "OECM", x: 30, y: 50 },
+            { name: "Deep Seamount", type: "Unprotected", x: 70, y: 90 },
+            { name: "South Atoll", type: "MPA", x: 80, y: 30 },
+            { name: "Eastern Shoal", type: "OECM", x: 60, y: 40 },
+            { name: "Estuary Mouth", type: "Unprotected", x: 40, y: 20 }
         ];
 
-        let currentPLD = 30;
-        let currentMatrix = [];
-        let selectedRegionIndex = 0; 
-        let spatialCanvas, ctx;
+        const typeColors = {
+            "MPA": "#2563eb",         // Blue
+            "OECM": "#14b8a6",        // Teal
+            "Unprotected": "#f59e0b"  // Amber
+        };
 
-        // --- 2. CORE LOGIC ---
-
-        window.setPLD = function(value) {
-            document.getElementById('pld-slider').value = value;
-            currentPLD = value;
-            updateAll(value);
+        function getDistances() {
+            const dists = [];
+            for (let i = 0; i < locations.length; i++) {
+                dists[i] = [];
+                for (let j = 0; j < locations.length; j++) {
+                    const dx = locations[i].x - locations[j].x;
+                    const dy = locations[i].y - locations[j].y;
+                    dists[i][j] = Math.sqrt(dx*dx + dy*dy);
+                }
+            }
+            return dists;
         }
 
-        function generateMatrix(pld) {
-            const factor = (pld - 30) / 100; 
+        const distanceMatrix = getDistances();
+
+        // --- 2. NETWORK MATH ---
+
+        function calculateConnectivityMatrix(pld) {
+            const matrix = [];
+            const decayRate = 1 / pld; 
             
-            return baseMatrixTemplate.map((row, rIndex) => {
-                return row.map((val, cIndex) => {
-                    if (rIndex === cIndex) {
-                        let newVal = val - (factor * 1.8); 
-                        return Math.max(0.05, Math.min(0.95, newVal));
+            // As PLD increases, larvae spend more time drifting, lowering local self-retention.
+            const selfRetention = Math.max(0.1, 1.0 - (pld * 0.01));
+            
+            for (let i = 0; i < locations.length; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < locations.length; j++) {
+                    if (i === j) {
+                        matrix[i][j] = selfRetention; 
                     } else {
-                        const dx = locations[rIndex].x - locations[cIndex].x;
-                        const dy = locations[rIndex].y - locations[cIndex].y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
-                        const distPenalty = dist / 100; 
-                        let newVal = val + (factor * 0.8) - (distPenalty * 0.1) + (pld/600);
-                        return Math.max(0.001, newVal);
+                        const dist = distanceMatrix[i][j];
+                        const prob = Math.exp(-decayRate * dist);
+                        // Mock directional currents (right/down flows stronger)
+                        const directionalMultiplier = (locations[i].x < locations[j].x) ? 1.2 : 0.8;
+                        matrix[i][j] = Math.min(1.0, prob * directionalMultiplier);
                     }
-                });
-            });
+                }
+            }
+            return matrix;
         }
 
         function calculateMetrics(matrix) {
-            return locations.map((loc, i) => {
-                let retention = matrix[i][i];
-                let exportSum = matrix[i].reduce((a, b) => a + b, 0) - retention;
-                let importSum = matrix.map(row => row[i]).reduce((a, b) => a + b, 0) - retention;
-                
-                return {
-                    name: loc.name,
-                    type: loc.type,
-                    retention: retention,
-                    exportVal: exportSum,
-                    importVal: importSum,
-                    betweenness: (exportSum * importSum) * 15 
-                };
-            });
+            const metrics = [];
+            for (let i = 0; i < locations.length; i++) {
+                let outDegree = 0; 
+                let inDegree = 0;  
+                let selfRetention = matrix[i][i];
+
+                for (let j = 0; j < locations.length; j++) {
+                    if (i !== j) {
+                        outDegree += matrix[i][j];
+                        inDegree += matrix[j][i];
+                    }
+                }
+                metrics.push({ outDegree, inDegree, selfRetention });
+            }
+            return metrics;
         }
 
-        // --- 3. CUSTOM HTML5 CANVAS MAP DRAWING ---
+        // --- 3. STATE ---
+        let currentPLD = 30;
+        let selectedRegionIndex = 0;
+        let currentMatrix = [];
+        let radarChartInstance = null;
+        let mapCtx = null;
+        let mapCanvas = null;
+
+        // --- 4. VISUALIZATION FUNCTIONS ---
 
         function initMapCanvas() {
-            spatialCanvas = document.getElementById('spatialMapCanvas');
-            ctx = spatialCanvas.getContext('2d');
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-        }
-
-        function resizeCanvas() {
-            const container = spatialCanvas.parentElement;
-            const dpr = window.devicePixelRatio || 1;
-            const rect = container.getBoundingClientRect();
-            spatialCanvas.width = rect.width * dpr;
-            spatialCanvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            drawNetworkMap();
+            mapCanvas = document.getElementById('map-canvas');
+            mapCtx = mapCanvas.getContext('2d');
+            
+            const resize = () => {
+                const wrapper = document.getElementById('map-wrapper');
+                mapCanvas.width = wrapper.clientWidth;
+                mapCanvas.height = wrapper.clientHeight;
+                if(currentMatrix.length > 0) drawNetworkMap();
+            };
+            window.addEventListener('resize', resize);
+            resize();
         }
 
         function drawNetworkMap() {
-            if (!ctx || currentMatrix.length === 0) return;
+            if (!mapCtx) return;
+            const w = mapCanvas.width;
+            const h = mapCanvas.height;
             
-            const w = spatialCanvas.width / (window.devicePixelRatio || 1);
-            const h = spatialCanvas.height / (window.devicePixelRatio || 1);
-            
-            ctx.clearRect(0, 0, w, h);
+            mapCtx.clearRect(0, 0, w, h);
 
-            const getCoords = (loc) => ({
-                x: (loc.x / 100) * w,
-                y: (loc.y / 100) * h
-            });
+            const padding = 40;
+            const getX = (val) => padding + (val / 100) * (w - padding * 2);
+            const getY = (val) => padding + ((100 - val) / 100) * (h - padding * 2);
 
             // 1. Draw Edges
-            const edgeThreshold = 0.03; 
-            currentMatrix.forEach((row, sourceIdx) => {
-                row.forEach((prob, destIdx) => {
-                    if (sourceIdx !== destIdx && prob > edgeThreshold) {
-                        const source = getCoords(locations[sourceIdx]);
-                        const dest = getCoords(locations[destIdx]);
-                        
-                        const midX = (source.x + dest.x) / 2;
-                        const midY = (source.y + dest.y) / 2;
-                        const offset = (sourceIdx > destIdx) ? 20 : -20;
-                        const cpX = midX - (dest.y - source.y) * (offset / 100);
-                        const cpY = midY + (dest.x - source.x) * (offset / 100);
-
-                        ctx.beginPath();
-                        ctx.moveTo(source.x, source.y);
-                        ctx.quadraticCurveTo(cpX, cpY, dest.x, dest.y);
-                        
-                        const alpha = Math.min(1, prob * 3);
-                        ctx.strokeStyle = `rgba(14, 165, 233, ${alpha})`; 
-                        ctx.lineWidth = prob * 15; 
-                        ctx.stroke();
-
-                        const t = 0.8; 
-                        const arrowX = (1-t)*(1-t)*source.x + 2*(1-t)*t*cpX + t*t*dest.x;
-                        const arrowY = (1-t)*(1-t)*source.y + 2*(1-t)*t*cpY + t*t*dest.y;
-                        ctx.beginPath();
-                        ctx.arc(arrowX, arrowY, prob * 5 + 1, 0, Math.PI*2);
-                        ctx.fillStyle = `rgba(14, 165, 233, ${alpha})`;
-                        ctx.fill();
+            for (let i = 0; i < locations.length; i++) {
+                for (let j = 0; j < locations.length; j++) {
+                    if (i !== j) {
+                        const prob = currentMatrix[i][j];
+                        if (prob > 0.05) { 
+                            mapCtx.beginPath();
+                            mapCtx.moveTo(getX(locations[i].x), getY(locations[i].y));
+                            mapCtx.lineTo(getX(locations[j].x), getY(locations[j].y));
+                            
+                            if (i === selectedRegionIndex || j === selectedRegionIndex) {
+                                mapCtx.strokeStyle = `rgba(14, 165, 233, ${prob * 0.9})`; 
+                                mapCtx.lineWidth = prob * 12;
+                            } else {
+                                mapCtx.strokeStyle = `rgba(148, 163, 184, ${prob * 0.4})`; 
+                                mapCtx.lineWidth = prob * 4;
+                            }
+                            mapCtx.stroke();
+                        }
                     }
-                });
-            });
+                }
+            }
 
             // 2. Draw Nodes
-            locations.forEach((loc) => {
-                const pos = getCoords(loc);
-                const isSelected = (loc.id === selectedRegionIndex);
-                const retentionProb = currentMatrix[loc.id][loc.id];
+            for (let i = 0; i < locations.length; i++) {
+                const loc = locations[i];
+                const x = getX(loc.x);
+                const y = getY(loc.y);
                 
-                ctx.shadowColor = 'rgba(0,0,0,0.2)';
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetY = 4;
+                // Radius is tied to SELF-RETENTION
+                const selfRet = currentMatrix[i][i];
+                const radius = 8 + (selfRet * 18); 
 
-                // Node size exaggerated for better visibility
-                const radius = 10 + (retentionProb * 35);
-
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = loc.color;
-                ctx.fill();
+                mapCtx.beginPath();
+                mapCtx.arc(x, y, radius, 0, 2 * Math.PI);
+                mapCtx.fillStyle = typeColors[loc.type];
                 
-                if(isSelected) {
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#1e293b';
-                    ctx.stroke();
+                if (i === selectedRegionIndex) {
+                    mapCtx.lineWidth = 4;
+                    mapCtx.strokeStyle = "#ffffff";
+                    mapCtx.stroke();
+                    // Add secondary glow ring
+                    mapCtx.beginPath();
+                    mapCtx.arc(x, y, radius + 4, 0, 2 * Math.PI);
+                    mapCtx.lineWidth = 2;
+                    mapCtx.strokeStyle = "#0ea5e9";
+                    mapCtx.stroke();
                 } else {
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.stroke();
+                    mapCtx.lineWidth = 2;
+                    mapCtx.strokeStyle = "#ffffff";
+                    mapCtx.stroke();
                 }
                 
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetY = 0;
+                mapCtx.fill();
 
-                const label = loc.name;
-                ctx.font = 'bold 12px Inter, sans-serif';
-                const metrics = ctx.measureText(label);
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                ctx.beginPath();
-                ctx.roundRect(pos.x - metrics.width/2 - 6, pos.y + radius + 4, metrics.width + 12, 18, 4);
-                ctx.fill();
-
-                ctx.fillStyle = '#334155';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillText(label, pos.x, pos.y + radius + 7);
-            });
+                // Labels
+                mapCtx.fillStyle = "#1e293b";
+                mapCtx.font = "bold 12px Inter";
+                mapCtx.textAlign = "center";
+                mapCtx.fillText(loc.name, x, y + radius + 15);
+            }
         }
 
-        // --- 4. CHARTS INITIALIZATION ---
+        function updateHeatmap(matrix) {
+            const labels = locations.map(l => l.name);
+            
+            const trace = {
+                z: matrix,
+                x: labels,
+                y: labels,
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#ffffff'], 
+                    [0.2, '#ccfbf1'],
+                    [0.5, '#14b8a6'],
+                    [1, '#0f766e']
+                ], 
+                reversescale: false,
+                hoverinfo: 'x+y+z',
+                texttemplate: "%{z:.2f}", 
+                textfont: {
+                    family: 'Inter, sans-serif',
+                    size: 11
+                },
+                colorbar: {
+                    title: 'Probability',
+                    thickness: 15
+                }
+            };
 
-        let sourceSinkChart, radarChart;
+            const layout = {
+                margin: { t: 20, r: 20, b: 80, l: 100 },
+                xaxis: { tickangle: -45 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { family: 'Inter, sans-serif' }
+            };
+
+            Plotly.react('heatmap-div', [trace], layout, {responsive: true, displayModeBar: false});
+        }
 
         function initCharts() {
-            const ctxSourceSink = document.getElementById('sourceSinkChart').getContext('2d');
-            sourceSinkChart = new Chart(ctxSourceSink, {
-                type: 'bar',
-                data: {
-                    labels: regionNames,
-                    datasets: [
-                        { label: 'Export (Source)', data: [], backgroundColor: '#38bdf8', borderRadius: 2 }, 
-                        { label: 'Import (Sink)', data: [], backgroundColor: '#818cf8', borderRadius: 2 },   
-                        { label: 'Retention', data: [], backgroundColor: '#cbd5e1', borderRadius: 2 }        
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: {family: 'Inter'} } } 
-                    },
-                    scales: { 
-                        y: { beginAtZero: true, stacked: true, grid: { color: '#f1f5f9' } }, 
-                        x: { stacked: true, grid: { display: false } } 
-                    }
-                }
-            });
-
-            const ctxRadar = document.getElementById('radarChart').getContext('2d');
-            radarChart = new Chart(ctxRadar, {
+            const ctx = document.getElementById('radar-chart').getContext('2d');
+            radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['Local Retention', 'Export Potential', 'Import Dependency', 'Network Bridge (Betweenness)'],
+                    labels: ['Larval Export', 'Larval Import', 'Self-Retention', 'Network Centrality', 'OECM Synergy'],
                     datasets: [{
-                        label: 'Metrics',
-                        data: [0,0,0,0],
-                        backgroundColor: 'rgba(20, 184, 166, 0.2)', 
-                        borderColor: '#14b8a6',
-                        pointBackgroundColor: '#14b8a6',
-                        pointHoverRadius: 6
+                        label: 'Region Profile',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)', 
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
                     scales: {
-                        r: { 
-                            angleLines: { color: '#e2e8f0' }, 
-                            grid: { color: '#e2e8f0' },
-                            pointLabels: { font: {family: 'Inter', size: 11}, color: '#64748b' },
-                            ticks: { display: false, min: 0, max: 1 } 
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: { font: { family: 'Inter', size: 11, weight: 'bold' }, color: '#475569' },
+                            ticks: { display: false, min: 0, max: 4 }
                         }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false } // Disabled native tooltips since we have custom hover badges
                     }
                 }
             });
         }
 
-        // --- 5. UPDATE CYCLE ---
-
-        function updateAll(pld) {
-            currentMatrix = generateMatrix(pld);
-            const metrics = calculateMetrics(currentMatrix);
-            
-            document.getElementById('pld-value').innerText = pld;
-            const insightBox = document.getElementById('pld-insight');
-            
-            if(pld < 20) {
-                insightBox.innerHTML = `<strong>Short PLD (${pld}d):</strong> High local retention. Nodes are isolated. MPAs mostly reseed themselves. OECMs rely entirely on local management as external larval supply is low.`;
-                insightBox.className = "bg-slate-100 border-l-4 border-slate-400 p-4 rounded text-sm text-slate-700 leading-relaxed transition-colors";
-            } else if (pld > 45) {
-                insightBox.innerHTML = `<strong>Long PLD (${pld}d):</strong> Widespread mixing. Strong connections form across the seascape. The network acts as a single, connected metapopulation where OECMs receive significant larval subsidies from distant MPAs.`;
-                insightBox.className = "bg-sky-50 border-l-4 border-sky-500 p-4 rounded text-sm text-sky-900 leading-relaxed transition-colors";
-            } else {
-                insightBox.innerHTML = `<strong>Moderate PLD (${pld}d):</strong> A balanced state. MPAs show healthy self-seeding while actively exporting larvae to neighboring OECMs via functional corridors.`;
-                insightBox.className = "bg-teal-50 border-l-4 border-teal-500 p-4 rounded text-sm text-teal-900 leading-relaxed transition-colors";
-            }
-
-            drawNetworkMap();
-
-            // Reversed autorange Y-axis added here
-            const dataTrace = [{
-                z: currentMatrix,
-                x: regionNames,
-                y: regionNames,
-                type: 'heatmap',
-                colorscale: [
-                    ['0.0', '#f8fafc'],
-                    ['0.2', '#bae6fd'],
-                    ['0.5', '#0ea5e9'],
-                    ['1.0', '#0369a1']
-                ],
-                showscale: true,
-                hovertemplate: '<b>Source:</b> %{y}<br><b>Dest:</b> %{x}<br><b>Prob:</b> %{z:.3f}<extra></extra>'
-            }];
-            
-            const layout = {
-                margin: { t: 20, b: 60, l: 80, r: 10 },
-                xaxis: { tickangle: -45, title: { text: 'Destination Node', font: {size: 11, color: '#64748b'} } },
-                yaxis: { title: { text: 'Source Node', font: {size: 11, color: '#64748b'} }, autorange: 'reversed' },
-                paper_bgcolor: 'transparent',
-                plot_bgcolor: 'transparent'
-            };
-            
-            Plotly.newPlot('matrixChart', dataTrace, layout, {responsive: true, displayModeBar: false});
-
-            const totalConnections = currentMatrix.flat().filter(x => x > 0.05).length;
-            const avgRetention = (metrics.reduce((acc, m) => acc + m.retention, 0) / locations.length * 100).toFixed(1);
-            
-            let maxVal = 0;
-            let maxLink = "--";
-            currentMatrix.forEach((row, r) => {
-                row.forEach((val, c) => {
-                    if (r !== c && val > maxVal) {
-                        maxVal = val;
-                        maxLink = `${locations[r].name} → ${locations[c].name}`;
-                    }
-                });
-            });
-
-            document.getElementById('metric-connections').innerText = totalConnections;
-            document.getElementById('metric-retention').innerText = avgRetention + "%";
-            document.getElementById('metric-link').innerText = maxLink;
-
-            sourceSinkChart.data.datasets[0].data = metrics.map(m => m.exportVal);
-            sourceSinkChart.data.datasets[1].data = metrics.map(m => m.importVal);
-            sourceSinkChart.data.datasets[2].data = metrics.map(m => m.retention);
-            sourceSinkChart.update();
-
-            updateRadar(selectedRegionIndex, metrics);
-        }
-
-        function updateRadar(index, metrics) {
-            const m = metrics[index];
+        function updateRadar(index, metricsData) {
+            const m = metricsData[index];
             const loc = locations[index];
             
-            const data = [
-                m.retention, 
-                m.exportVal * 1.5, 
-                m.importVal * 1.5, 
-                Math.min(1, m.betweenness) 
-            ];
+            const exportVal = Math.min(4, m.outDegree);
+            const importVal = Math.min(4, m.inDegree);
+            const retainVal = Math.min(4, m.selfRetention * 4);
+            const centrality = Math.min(4, (m.outDegree + m.inDegree) / 1.5);
             
-            radarChart.data.datasets[0].data = data;
-            radarChart.data.datasets[0].label = loc.name;
-            radarChart.data.datasets[0].borderColor = loc.color;
-            radarChart.data.datasets[0].backgroundColor = loc.type === 'MPA' ? 'rgba(20, 184, 166, 0.2)' : 'rgba(251, 146, 60, 0.2)';
-            radarChart.data.datasets[0].pointBackgroundColor = loc.color;
-            radarChart.update();
+            let synergyVal = loc.type === "OECM" ? 2 : 1;
+            synergyVal += (centrality * 0.5);
+
+            radarChartInstance.data.datasets[0].data = [exportVal, importVal, retainVal, centrality, Math.min(4, synergyVal)];
+            radarChartInstance.data.datasets[0].label = loc.name;
+            radarChartInstance.update();
+        }
+
+        // --- 5. INTERACTION LOGIC ---
+
+        function updateAll(pld) {
+            document.getElementById('pld-value').innerText = pld;
+            currentMatrix = calculateConnectivityMatrix(pld);
+            
+            updateHeatmap(currentMatrix);
+            
+            const metrics = calculateMetrics(currentMatrix);
+            updateRadar(selectedRegionIndex, metrics);
 
             const roleDesc = document.getElementById('role-description');
-            let text = `<div class="font-bold mb-1 flex items-center">
-                            <span class="w-3 h-3 rounded-full inline-block mr-2" style="background-color: ${loc.color}"></span>
-                            ${loc.name} (${loc.type})
-                        </div>`;
+            const loc = locations[selectedRegionIndex];
+            const m = metrics[selectedRegionIndex];
             
-            if (m.exportVal > m.importVal + 0.05) {
-                text += `Functions strongly as a <strong>Source</strong>. `;
-                if(loc.type === 'MPA') text += `This means its strict protection is successfully subsidizing other areas with larvae.`;
-                else text += `Despite being an OECM, it's vital for seeding the network.`;
-            } 
-            else if (m.importVal > m.exportVal + 0.05) {
-                text += `Functions heavily as a <strong>Sink</strong>. `;
-                if(loc.type === 'OECM') text += `Its fisheries likely depend on larvae floating in from the MPAs.`;
-                else text += `As an MPA, it serves to protect imported populations.`;
-            } 
-            else {
-                text += `A balanced node. `;
-            }
+            let text = `<strong>${loc.name}</strong> is a designated <strong>${loc.type}</strong>. `;
             
-            if (m.betweenness > 0.4) {
-                text += `<br><br><span class="text-sky-700">High Betweenness:</span> Critical stepping-stone. If degraded, network connectivity drops sharply.`;
+            if (pld < 15) {
+                text += `At this low PLD (${pld} days), it mostly relies on self-recruitment. Larvae don't travel far enough to support other regions robustly.`;
+            } else if (pld >= 15 && pld <= 45) {
+                if (m.outDegree > m.inDegree) {
+                    text += `It acts as an important <strong>Source</strong>, exporting larvae to surrounding areas, supporting the wider network.`;
+                } else {
+                    text += `It acts as a critical <strong>Sink/Nursery</strong>, receiving larvae from afar. Its protection is vital for regional population stability.`;
+                }
+            } else {
+                text += `At this high PLD (${pld} days), it is highly interconnected. The entire network acts almost as a single meta-population.`;
             }
             
             roleDesc.innerHTML = text;
             drawNetworkMap();
         }
 
-        // --- 6. BOOTSTRAP ---
+        // --- 6. QUIZ LOGIC (Compacted) ---
+        
+        const quizQuestions = [
+            {
+                question: "Set the PLD slider to 45 days. Look at the lines (edges) on the Spatial Network Map. Which statement best describes what happens to the connections as PLD increases from 15 to 45 days?",
+                options: [
+                    "The lines disappear completely.",
+                    "Only the connections to Unprotected areas grow thicker.",
+                    "More lines appear and existing lines grow thicker, indicating a wider and stronger exchange of larvae.",
+                    "The lines turn into a single straight path from top to bottom."
+                ],
+                correctIndex: 2,
+                explanation: "Correct! As the pelagic larval duration (PLD) increases, larvae have more time to drift on ocean currents, resulting in a more heavily interconnected network (more edges, and thicker lines)."
+            },
+            {
+                question: "Move the PLD slider down to 5 days. Look at the Spatial Network Map. What happens to the colored circles (nodes), and what does this represent?",
+                options: [
+                    "They become very small, meaning larvae are drifting far away.",
+                    "They become very large, representing high local self-retention because larvae settle quickly.",
+                    "They disappear entirely because marine species cannot survive with a 5-day PLD.",
+                    "All the circles shift to the center of the map."
+                ],
+                correctIndex: 1,
+                explanation: "Exactly! Larger circles (nodes) indicate higher self-retention. At 5 days, larvae don't have time to travel, so most of them settle at their home reef, expanding the circle sizes."
+            },
+            {
+                question: "Adjust the PLD slider to 20 days. Look at the Connectivity Probability Matrix. Excluding self-retention (the diagonal line), which of these pathways shows the highest probability of larval transfer?",
+                options: [
+                    "From Coastal Bay to North Reef",
+                    "From Eastern Shoal to South Atoll",
+                    "From Deep Seamount to Estuary Mouth",
+                    "From South Atoll to North Reef"
+                ],
+                correctIndex: 1,
+                explanation: "Correct! If you set the slider to 20 days, the square matching the row 'Eastern Shoal' to the column 'South Atoll' has the darkest teal color and highest decimal value of all the non-diagonal squares."
+            },
+            {
+                question: "Set the PLD slider to 60 days. Select 'North Reef' in the Regional Role Analysis. Look at the Radar Chart. What happens to its 'Network Centrality' compared to a 5-day PLD?",
+                options: [
+                    "It drops to zero.",
+                    "It remains exactly the same.",
+                    "It expands significantly towards the outer edge, showing high integration.",
+                    "It turns negative."
+                ],
+                correctIndex: 2,
+                explanation: "Correct! At 60 days, larvae travel vast distances. The radar shape shifts drastically towards 'Network Centrality', showing North Reef is now intimately connected to the rest of the seascape."
+            }
+        ];
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = ''; 
+
+            quizQuestions.forEach((q, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'border-b border-slate-200 pb-5 last:border-0 last:pb-0';
+                
+                const title = document.createElement('h3');
+                title.className = 'text-base font-bold mb-3 text-slate-800 leading-snug';
+                title.innerText = `${qIndex + 1}. ${q.question}`;
+                qDiv.appendChild(title);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 mb-2';
+                
+                const explBox = document.createElement('div');
+                explBox.className = 'hidden p-3 mt-3 rounded-md text-xs bg-slate-50 border border-slate-200 text-slate-700 leading-relaxed';
+                explBox.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+
+                q.options.forEach((optText, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-option text-left p-3 rounded-md border border-slate-200 text-sm font-medium text-slate-700 bg-white';
+                    btn.innerText = optText;
+                    
+                    btn.onclick = () => {
+                        const allBtns = optionsGrid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.remove('cursor-pointer');
+                        });
+
+                        if (oIndex === q.correctIndex) {
+                            btn.classList.add('correct');
+                        } else {
+                            btn.classList.add('incorrect');
+                            allBtns[q.correctIndex].classList.add('correct');
+                        }
+                        
+                        explBox.classList.remove('hidden');
+                    };
+                    
+                    optionsGrid.appendChild(btn);
+                });
+
+                qDiv.appendChild(optionsGrid);
+                qDiv.appendChild(explBox);
+                container.appendChild(qDiv);
+            });
+        }
+
+        // --- 7. BOOTSTRAP ---
 
         document.addEventListener('DOMContentLoaded', () => {
             initMapCanvas();
             initCharts();
+            initQuiz();
             
             const select = document.getElementById('region-selector');
             locations.forEach((l, i) => {
@@ -690,12 +706,10 @@
                 selectedRegionIndex = parseInt(e.target.value);
                 const metrics = calculateMetrics(currentMatrix);
                 updateRadar(selectedRegionIndex, metrics);
+                updateAll(currentPLD);
             });
         });
 
-        function scrollToSection(id) {
-            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
-        }
     </script>
 </body>
 </html>
