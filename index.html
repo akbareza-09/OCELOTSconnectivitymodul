@@ -90,7 +90,7 @@
                 <svg xmlns="https://www.learngala.com/cases/human-seagrass/2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Back to Case Study
             </a>
-            <h1 class="text-3xl md:text-5xl font-bold mb-3 italic">How does larval dispersal connect the ecosystem in the seascape?</h1>
+            <h1 class="text-3xl md:text-5xl font-bold mb-3 italic">How does larval dispersal connect MPAs in the seascape?</h1>
             <p class="text-base md:text-lg font-light text-cyan-100 max-w-3xl">
                 Explore how Pelagic Larval Duration (PLD) drives connectivity between protected and unprotected marine areas.
             </p>
@@ -104,7 +104,9 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900">1. Adjust the Pelagic Larval Duration (PLD)</h2>
-                    <p class="text-slate-500">PLD is the amount of time a marine species spends as a free-swimming or drifting larva in the open ocean before settling down into its adult habitat. Longer PLDs allow larvae to drift further on ocean currents!</p>
+                    <p class="text-slate-500">PLD is the amount of time a marine species spends as a drifting larva in the open ocean before settling down.
+<br>
+What do you predict will happen to connectivity when larvae spend longer in the water column?</p>
                 </div>
                 <div class="bg-cyan-50 px-4 py-2 rounded-lg border border-cyan-100 flex items-center">
                     <span class="text-sm font-semibold text-cyan-800">Current PLD:</span>
@@ -274,7 +276,7 @@
                             </div>
 
                             <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Ecological Synergy</span>
+                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Ecological Synergy/Contribution</span>
                                 <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
                                     The combined conservation value of this area acting as a sustainably managed buffer within the protected network.
                                     <div class="tooltip-arrow"></div>
@@ -445,7 +447,7 @@
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['Larval Export', 'Larval Import', 'Self-Retention', 'Network Centrality', 'Ecological Synergy'],
+                    labels: ['Larval Export', 'Larval Import', 'Self-Retention', 'Network Centrality', 'Ecological Synergy/Contribution'],
                     datasets: [{ backgroundColor: 'rgba(168, 85, 247, 0.2)', borderColor: '#a855f7', data: [0, 0, 0, 0, 0], borderWidth: 3, pointBackgroundColor: '#a855f7' }]
                 },
                 options: { 
@@ -585,4 +587,3 @@
     </script>
 </body>
 </html>
-
