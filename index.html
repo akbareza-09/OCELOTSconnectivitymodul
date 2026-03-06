@@ -1,587 +1,849 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>How does larval dispersal connect the ecosystem in the seascape?</title>
+    <title>OECM | Coral Triangle</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 800: '#075985', 900: '#0c4a6e' },
+                        coral: { 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48' },
+                        seagrass: { 500: '#14b8a6', 600: '#0d9488' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            height: 320px;
-            max-height: 350px;
-        }
-        .map-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #e0f2fe;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 1px solid #bae6fd;
-        }
-        canvas#map-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        .quiz-option { transition: all 0.2s ease; }
-        .quiz-option:disabled { opacity: 0.7; cursor: not-allowed; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }
+        .chart-container { position: relative; width: 100%; height: 350px; }
         
-        .tooltip-box {
+        /* Floating Box for Spider Map Labels */
+        #chart-tooltip {
             position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-bottom: 8px;
-            width: 200px;
-            padding: 10px;
-            background-color: #1e293b;
+            background: rgba(15, 23, 42, 0.95);
             color: white;
-            font-size: 11px;
-            font-weight: 400;
-            line-height: 1.4;
-            border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            opacity: 0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 12px;
             pointer-events: none;
-            transition: opacity 0.2s ease;
-            z-index: 50;
-            text-align: center;
+            display: none;
+            z-index: 1000;
+            max-width: 240px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            line-height: 1.5;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .group:hover .tooltip-box { opacity: 1; }
-        .tooltip-arrow {
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 6px solid #1e293b;
-        }
-        .guide-box {
-            background-color: #f8fafc;
-            border-left: 4px solid #38bdf8;
-            padding: 1rem;
-            margin-top: 1rem;
-            border-radius: 0 0.5rem 0.5rem 0;
-            border-top: 1px solid #f1f5f9;
-            border-right: 1px solid #f1f5f9;
-            border-bottom: 1px solid #f1f5f9;
-        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="antialiased flex flex-col min-h-screen">
 
-    <header class="bg-gradient-to-r from-cyan-800 to-blue-900 text-white py-10 px-6 shadow-md">
-        <div class="max-w-6xl mx-auto">
-            <a href="https://www.learngala.com/cases/human-seagrass/2" class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-sm font-medium text-white transition-all mb-8 w-fit backdrop-blur-sm shadow-sm">
-                <svg xmlns="https://www.learngala.com/cases/human-seagrass/2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                Back to Case Study
-            </a>
-            <h1 class="text-3xl md:text-5xl font-bold mb-3 italic">How does larval dispersal connect MPAs in the seascape?</h1>
-            <p class="text-base md:text-lg font-light text-cyan-100 max-w-3xl">
-                Explore how Pelagic Larval Duration (PLD) drives connectivity between protected and unprotected marine areas.
+    <!-- Chosen Palette: Coastal Professional (Ocean 900, Coral 500, Seagrass 500) -->
+    
+    <!-- Application Structure Plan: 
+    1. Navigation with UGM link.
+    2. Side-by-Side Comparison: Spider chart and table are now in a 2-column grid for direct visual correlation.
+    3. Thematic Pathways: Sections updated with paraphrased high-fidelity definitions provided.
+    4. Hover Logic: Custom JS listeners on Chart.js label positions for the "Floating Box" effect.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navigation -->
+    <nav class="bg-ocean-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                                    </div>
+                <div class="flex items-center space-x-4">
+                    <a href="https://www.ugm.ac.id" class="bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded-lg text-sm transition font-medium">
+                        ← Back to Case Study
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="bg-ocean-800 text-white py-16 px-4">
+        <div class="max-w-5xl mx-auto text-center">
+            <h1 class="text-3xl md:text-5xl font-bold mb-4">OECM in the Coral Triangle</h1>
+            <p class="text-ocean-100 opacity-90 max-w-2xl mx-auto italic">
+                OECM is defined as a geographically defined area other than a Protected Area, which is governed and managed in ways that achieve positive and sustained long-term outcomes for the in-situ conservation of biodiversity with associated ecosystem functions and services and where applicable, cultural, spiritual, socio–economic, and other locally relevant values.
             </p>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-8 space-y-10">
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-12 space-y-16">
 
-        <!-- Control Section -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">1. Adjust the Pelagic Larval Duration (PLD)</h2>
-                    <p class="text-slate-500">PLD is the amount of time a marine species spends as a drifting larva in the open ocean before settling down.
-<br>
-What do you predict will happen to connectivity when larvae spend longer in the water column?</p>
-                </div>
-                <div class="bg-cyan-50 px-4 py-2 rounded-lg border border-cyan-100 flex items-center">
-                    <span class="text-sm font-semibold text-cyan-800">Current PLD:</span>
-                    <span id="pld-value" class="text-2xl font-black text-cyan-600 ml-2">30</span>
-                    <span class="text-cyan-800 font-medium ml-1">days</span>
-                </div>
+<!-- AUDIO -->
+<section id="podcast">
+    <div class="mb-8 border-l-4 border-coral-500 pl-4">
+        <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">Quick dive</h2>
             </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <iframe 
+            data-testid="embed-iframe" 
+            style="border-radius:12px" 
+            src="https://open.spotify.com/embed/episode/6qHQdyJyqWyakhoPDxkkjH?utm_source=generator" 
+            width="100%" 
+            height="352" 
+            frameBorder="0" 
+            allowfullscreen="" 
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+            loading="lazy">
+        </iframe>
+    </div>
+</section>
 
-            <div class="relative w-full mb-8">
-                <input type="range" id="pld-slider" min="5" max="60" value="30" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-cyan-600">
-                <div class="flex justify-between text-xs font-bold text-slate-400 mt-2 px-1">
-                    <span>SHORT (5d)</span>
-                    <span>MEDIUM (30d)</span>
-                    <span>LONG (60d)</span>
-                </div>
+<!-- SECTION 1: Criteria A-D with Hover Notes (Using pure Tailwind for robustness) -->
+        <section id="definition">
+            <div class="mb-8 border-l-4 border-coral-500 pl-4">
+                <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">The Core Criteria</h2>
+                <p class="text-slate-500 text-sm italic"> The CBD criteria and sub-criteria for identifying an OECM with explanatory notes. Hover cards to reveal concise exploratory notes.</p>
             </div>
-
-            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 class="text-sm font-bold text-slate-700 mb-3 text-xs uppercase tracking-wider">Example of Tropical Species References:</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-slate-600 mb-3">
-                    <div class="flex flex-col justify-center bg-white px-3 py-2 rounded shadow-sm border border-slate-100">
-                        <span class="font-medium">🐟 Rabbitfish</span>
-                        <span class="font-mono font-bold text-cyan-600 text-xs">18-45d</span>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Criterion A -->
+                <div class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-ocean-500 transition-all cursor-default relative">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-8 h-8 rounded-full bg-ocean-100 text-ocean-700 flex items-center justify-center font-bold text-sm">A</span>
+                        <h3 class="font-bold text-slate-800">Not a Protected Area</h3>
                     </div>
-                    <div class="flex flex-col justify-center bg-white px-3 py-2 rounded shadow-sm border border-slate-100">
-                        <span class="font-medium">🐠 Coral Trout</span>
-                        <span class="font-mono font-bold text-cyan-600 text-xs">25-50d</span>
-                    </div>
-                    <div class="flex flex-col justify-center bg-white px-3 py-2 rounded shadow-sm border border-slate-100">
-                        <span class="font-medium">🐟 Snapper</span>
-                        <span class="font-mono font-bold text-cyan-600 text-xs">25-40d</span>
-                    </div>
-                    <div class="flex flex-col justify-center bg-white px-3 py-2 rounded shadow-sm border border-slate-100">
-                        <span class="font-medium">🐙 Octopus</span>
-                        <span class="font-mono font-bold text-cyan-600 text-xs">30-60d</span>
-                    </div>
+                    <p class="text-xs text-slate-500">The site is not currently recorded in formal national MPA databases.</p>
                     
-                </div>
-                <p class="text-[11px] text-slate-500 italic leading-tight">
-                            * <strong>Scientific Note:</strong> These PLD values are general approximations derived from literature for illustrative purposes. In reality, larval duration and actual dispersal networks vary significantly depending on localized oceanographic currents, water temperature, seasonal spawning dynamics, and active larval swimming behavior.
-                        </p>
-            </div>
-        </section>
-
-        <!-- Visualization Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
-                <h2 class="text-xl font-bold mb-1 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-cyan-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                    Spatial Network Map
-                </h2>
-                
-                <div class="mt-1 flex gap-4 text-xs font-semibold text-slate-600 mb-4">
-                    <div class="relative group cursor-help flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-blue-600"></span> MPA
-                        <div class="tooltip-box">MPAs are formally designated for biodiversity conservation.<div class="tooltip-arrow"></div></div>
-                    </div>
-                    <div class="relative group cursor-help flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-slate-400"></span> Non-MPA
-                        <div class="tooltip-box">Non-MPA areas represent reefs without formal spatial protection.<div class="tooltip-arrow"></div></div>
+                    <!-- Fixed Hover Reveal -->
+                    <div class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:max-h-48 group-hover:opacity-100 group-hover:mt-3">
+                        <div class="text-[11px] leading-relaxed text-ocean-700 bg-ocean-50 p-3 rounded-lg border border-ocean-100">
+                            OECMs provide recognition for conservation occurring outside the formal protected area network, avoiding dual-classification.
+                        </div>
                     </div>
                 </div>
 
-                <div class="map-container flex-grow mb-4" id="map-wrapper">
-                    <canvas id="map-canvas"></canvas>
-                </div>
-
-                <!-- Helper Guide -->
-                <br>
-                <div class="mt-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg text-sm text-blue-900 leading-relaxed">
-                    <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this map:</h3>
-                    <p class="mb-1 text-blue-800">This visualization helps us instantly spot the physical pathways created by ocean currents.</p>
-                    <ul class="list-disc pl-5 space-y-1 text-blue-800 text-xs mt-2">
-                        <li><strong>Watch the lines (Edges):</strong> Notice how they change when you adjust the slider? Thicker, darker lines mean a stronger flow of larvae between two locations. Do you see the connections between them?</li>
-                        <li><strong>Watch the circles (Nodes):</strong> Each circle represents a physical location. A larger circle means more larvae stay at their home reef (local retention), while long PLDs shrink them as larvae drift far away.</li>
-                    </ul>
-                </div>
-            </section>
-
-            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-cyan-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
-                    Connectivity Probability Matrix
-                </h2>
-                <div id="heatmap-div" class="flex-grow w-full min-h-[350px] mb-4"></div>
-
-                 <!-- Helper Guide -->
-                <br>
-                <div class="mt-2 bg-teal-50 border-l-4 border-teal-500 p-3 rounded-r-lg text-sm text-teal-900 leading-relaxed">
-                    <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this matrix:</h3>
-                    <p class="mb-1 text-teal-800">This grid shows the exact mathematical probability of larvae moving from one place to another.</p>
-                    <ul class="list-disc pl-5 space-y-1 text-teal-800 text-xs mt-2">
-                        <li><strong>Read Row to Column:</strong> Pick a "Source" location on the left side, and follow its row across to see how much it gives to a "Destination" on the bottom.</li>
-                        <li><strong>Watch the Colors:</strong> White means zero connection. The darker the teal, the stronger the connection!</li>
-                        <li><strong>The Diagonal Line:</strong> The squares running diagonally down the middle show larvae that stay at home (Self-Retention).</li>
-                    </ul>
-            </section>
-        </div>
-
-        <!-- Regional Roles -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
-            <h2 class="text-2xl font-bold mb-6 text-slate-900 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="text-purple-600" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v20"/><path d="M2 12h20"/></svg>
-                2. Regional Connectivity Roles
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-tight">Select Region:</label>
-                        <select id="region-selector" class="w-full bg-slate-50 border-2 border-slate-200 text-slate-900 text-sm font-bold rounded-xl focus:ring-purple-500 focus:border-purple-500 block p-4 outline-none shadow-sm transition-all hover:border-slate-300"></select>
+                <!-- Criterion B -->
+                <div class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-coral-500 transition-all cursor-default relative">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-8 h-8 rounded-full bg-coral-100 text-coral-700 flex items-center justify-center font-bold text-sm">B</span>
+                        <h3 class="font-bold text-slate-800">Governed & Managed</h3>
                     </div>
-                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner min-h-[140px]">
-                        <h3 class="font-bold text-slate-800 mb-2 text-xs uppercase tracking-widest text-slate-400">Ecological Profile</h3>
-                        <div id="role-description" class="text-sm text-slate-600 leading-relaxed"></div>
-                    </div>
-                </div>
-                 <!-- Helper Guide -->
-                    <div class="bg-purple-50 border-l-4 border-purple-500 p-3 rounded-r-lg text-sm text-purple-900 mt-4">
-                        <h3 class="font-bold mb-1 flex items-center gap-2">🤔 How to read this chart:</h3>
-                        <p class="text-purple-800 text-xs">
-                            This "Spider Chart" builds a unique profile for the selected location. 
-                            If the shape spikes toward <strong>Larval Export</strong>, it's acting as a vital source feeding the network. 
-                            If it spikes toward <strong>Self-Retention</strong>, it acts as a closed, self-sustaining loop.
-                        </p>
-                    </div>
-                </div>
-                <div class="md:col-span-2 flex flex-col items-center">
-                    <div class="chart-container bg-white rounded-xl p-4 border border-slate-100 w-full">
-                        <canvas id="radar-chart"></canvas>
-                    </div>
+                    <p class="text-xs text-slate-500">Must have a geographically defined boundary and legitimate governance.</p>
                     
-                    <div class="mt-6 w-full">
-                        <p class="text-[11px] text-purple-600 font-bold mb-3 text-center uppercase tracking-wider">
-                            👆 Hover over a metric below to reveal its definition
-                        </p>
-                        <div class="flex flex-wrap justify-center gap-2 text-xs">
-                            <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Larval Export (Source)</span>
-                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                                    The volume of larvae this reef successfully sends out on ocean currents to populate other regions.
-                                    <div class="tooltip-arrow"></div>
-                                </div>
-                            </div>
+                    <!-- Fixed Hover Reveal -->
+                    <div class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:max-h-48 group-hover:opacity-100 group-hover:mt-3">
+                        <div class="text-[11px] leading-relaxed text-coral-700 bg-coral-50 p-3 rounded-lg border border-coral-100">
+                            Requires a clear geographic area with management intended for the long-term. In Raja Ampat, <strong>Sasi</strong> closures are temporary, but the governance behind them is permanent (Criterion B).
+                        </div>
+                    </div>
+                </div>
 
-                            <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Larval Import (Sink)</span>
-                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                                    The amount of larvae this location receives from other reefs, acting as a crucial nursery or "sink".
-                                    <div class="tooltip-arrow"></div>
-                                </div>
-                            </div>
+                <!-- Criterion C -->
+                <div class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-seagrass-500 transition-all cursor-default relative">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-8 h-8 rounded-full bg-seagrass-100 text-seagrass-700 flex items-center justify-center font-bold text-sm">C</span>
+                        <h3 class="font-bold text-slate-800">Effective Outcomes</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">Must deliver positive and sustained long-term biodiversity outcomes.</p>
+                    
+                    <!-- Fixed Hover Reveal -->
+                    <div class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:max-h-48 group-hover:opacity-100 group-hover:mt-3">
+                        <div class="text-[11px] leading-relaxed text-seagrass-700 bg-seagrass-50 p-3 rounded-lg border border-seagrass-100">
+                            Unlike MPAs which are judged on intent, OECMs are defined by their <strong>outcomes</strong>. Recognition requires verifiable evidence that biodiversity is maintained.
+                        </div>
+                    </div>
+                </div>
 
-                            <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Self-Retention</span>
-                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                                    The proportion of larvae that stay and settle directly at their home reef without drifting away.
-                                    <div class="tooltip-arrow"></div>
-                                </div>
-                            </div>
-
-                            <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Network Centrality</span>
-                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                                    How critical this specific location is as a "stepping-stone" or hub that connects the entire seascape together.
-                                    <div class="tooltip-arrow"></div>
-                                </div>
-                            </div>
-
-                            <div class="relative group cursor-help">
-                                <span class="bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 font-semibold shadow-sm transition-colors group-hover:bg-purple-600 group-hover:border-purple-600 group-hover:text-white inline-block">Ecological Synergy/Contribution</span>
-                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
-                                    The combined conservation value of this area acting as a sustainably managed buffer within the protected network.
-                                    <div class="tooltip-arrow"></div>
-                                </div>
-                            </div>
+                <!-- Criterion D -->
+                <div class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-amber-500 transition-all cursor-default relative">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">D</span>
+                        <h3 class="font-bold text-slate-800">Holistic Values</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">Supports ecosystem services and cultural/spiritual values.</p>
+                    
+                    <!-- Fixed Hover Reveal -->
+                    <div class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:max-h-48 group-hover:opacity-100 group-hover:mt-3">
+                        <div class="text-[11px] leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                            OECMs often arise from social, economic, and cultural values (like food security or sacred sites) which are integral to the area’s success.
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Quiz Section -->
-        <section id="quiz" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-800 p-5 text-white flex items-center justify-between">
-                <h2 class="text-2xl font-bold">3. Check Your Understanding</h2>
-                <span class="bg-cyan-500 text-xs px-2 py-1 rounded font-bold uppercase tracking-wider text-slate-900">Knowledge Check</span>
+        <!-- SECTION: Side-by-Side Comparison -->
+        <section id="comparison">
+            <div class="mb-8 border-l-4 border-coral-500 pl-4">
+                <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">Structural Comparison: MPA vs OECM</h2>
+                <p class="text-slate-500 text-sm">Comparison based on design intent and governance frameworks.</p>
             </div>
-            <div id="quiz-container" class="p-8 space-y-8"></div>
-        </section>
-    </main>
+            
+            <div class="grid lg:grid-cols-2 gap-8 items-stretch">
+                <!-- Spider Chart Column -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col relative">
+                    <h3 class="text-center font-bold text-slate-700 mb-6">Governance & Intent Map</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                    <!-- Floating box for label descriptions -->
+                    <div id="chart-tooltip"></div>
+                    
+                    <div class="mt-auto pt-6 border-t border-slate-100">
+                        <p class="text-[10px] text-slate-400 leading-tight italic">
+                            <strong>Disclaimer:</strong> Scores reflect design intent and formal mandate, not realized outcomes. In practice, MPAs frequently underperform due to insufficient enforcement budgets, low staffing, and weak compliance — the so-called 'paper park' problem. OECMs governed by resource-dependent communities may achieve stronger realized outcomes despite lower formal mandate scores.
+                        </p>
+                    </div>
+                </div>
 
-    <footer class="bg-slate-900 text-slate-400 py-8 text-center text-sm">
-        <div class="max-w-6xl mx-auto px-6">
+                <!-- Table Column -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <table class="w-full text-left border-collapse flex-grow">
+                        <thead>
+                            <tr class="bg-ocean-900 text-white text-xs uppercase tracking-wider">
+                                <th class="p-4 border-b">Feature</th>
+                                <th class="p-4 border-b">MPA</th>
+                                <th class="p-4 border-b">OECM</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                <td class="p-4 font-semibold text-slate-800">Primary Objective</td>
+                                <td class="p-4 text-slate-600">Must be nature conservation.</td>
+                                <td class="p-4 text-slate-600">Flexible (Sustainable use, cultural, military, private, etc).</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                <td class="p-4 font-semibold text-slate-800">Conservation Outcome</td>
+                                <td class="p-4 text-slate-600">Mandatory & verified with strict assessment.</td>
+                                <td class="p-4 text-slate-600">Mandatory & verified with wide adaptive assessment.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                <td class="p-4 font-semibold text-slate-800">Governance Type</td>
+                                <td class="p-4 text-slate-600">State-led/Formal.</td>
+                                <td class="p-4 text-slate-600">Diverse (Indigenous, Local, Private).</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-4 font-semibold text-slate-800">Recognition Criteria</td>
+                                <td class="p-4 text-slate-600">Based on legal status.</td>
+                                <td class="p-4 text-slate-600">Based on existing sustained impact.</td>
+                            </tr>
+<tr class="hover:bg-slate-50 border-b border-slate-100">
+    <td class="p-4 font-semibold text-slate-800">Enforcement Basis</td>
+    <td class="p-4 text-slate-600">State authority (rangers, regulations).</td>
+    <td class="p-4 text-slate-600">Community norms, social sanctions, cultural rules.</td>
+</tr>
+                        </tbody>
+                    </table>
+                    <div class="bg-slate-50 p-4 text-xs text-slate-500">
+                        *Source: CBD Decision 14/8 and IUCN WCPA Guidelines.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Detailed Pathways -->
+        <section id="pathways" class="space-y-10">
+            <div class="mb-8 border-l-4 border-seagrass-500 pl-4">
+                <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">OECM Conservation Objectives</h2>
+                <p class="text-slate-500 text-sm">How conservation outcome is achieved across different management contexts.</p>
+            </div>
+
+            <div class="grid gap-6">
+                <!-- Primary -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="md:w-1/2">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-ocean-100 text-ocean-700 text-xs font-bold mb-4">
+                                PATHWAY 1
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Primary Conservation</h3>
+                            <p class="text-slate-600 leading-relaxed text-sm">
+                                These sites are managed with <strong>nature conservation as the main priority</strong>, yet they remain outside the formal "Protected Area" classification. Often, governing authorities like Indigenous peoples or local communities choose the OECM framework to gain recognition for their contributions without being absorbed into state databases or government-run systems.
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 bg-ocean-50/50 p-6 rounded-xl border border-ocean-100">
+                            <h4 class="font-bold text-ocean-900 mb-2 italic">Examples:</h4>
+                            <p class="text-sm text-slate-700">
+                                <strong>* Formal managed areas for conservation </strong>(e.g., world heritage, man and the biosphere, biosphere). <br> <strong>* Privately managed areas for conservation </strong> (e.g., private beach for reef restoration) 
+                            </p>
+<p class="text-sm text-slate-700">
+                                <strong>* Locally Managed Marine Areas (LMMAs):</strong> Some Indigenous and community-led territories (ICCA) in Phillipines declare zones where fishing or harvesting is permanently prohibited. By reporting as OECMs, communities maintain their sovereignty while fulfilling international conservation targets.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="md:w-1/2">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-coral-100 text-coral-700 text-xs font-bold mb-4">
+                                PATHWAY 2
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Secondary Conservation</h3>
+                            <p class="text-slate-600 leading-relaxed text-sm">
+                                In these areas, biodiversity protection is a <strong>secondary objective</strong> supporting a different primary goal. Examples include sites managed primarily for nature-based tourism or water catchment protection, where conserving the local ecosystem is essential to the success of the primary activity.
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 bg-coral-50/50 p-6 rounded-xl border border-coral-100">
+                            <h4 class="font-bold text-coral-900 mb-2 italic">Examples:</h4>
+                            <p class="text-sm text-slate-700">
+                                <strong>* Customary "Tara Bandu" (Timor Leste):</strong> Customary zones in Makili and Bikeli village  to regulate fishing. Fish stocks have recovered, aiding food security and eco-tourism.
+                            </p>
+<p class="text-sm text-slate-700">
+                                * <strong>Privately managed tourism areas</strong>: restoration mangrove area as part of corporate social responsibility (CSR) program, fisheries management area from the government, etc. 
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ancillary -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="md:w-1/2">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-seagrass-100 text-seagrass-700 text-xs font-bold mb-4">
+                                PATHWAY 3
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Ancillary Conservation</h3>
+                            <p class="text-slate-600 leading-relaxed text-sm">
+                                These sites deliver effective in situ conservation as an <strong>unintended by-product (ancillary outcome)</strong> of management, even though conservation isn't an explicit objective. This occurs in areas where human access is strictly limited for reasons like cultural taboos, historical preservation, or national security.
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 bg-emerald-50/50 p-6 rounded-xl border border-emerald-100">
+                            <h4 class="font-bold text-emerald-900 mb-2 italic">Examples:</h4>
+                            <p class="text-sm text-slate-700">
+                                <strong>* Historical War Graves (Solomons):</strong> Access restrictions to WWII wreck sites intended for historical preservation create unintended "de facto" sanctuaries where coral and fish biomass thrive undisturbed by fishing pressure.
+                            </p>
+<p class="text-sm text-slate-700">
+                                <strong>* Military and Security Zones </strong>: Restricted coastal areas for naval exercises or defense purposes. Because these zones are closed to commercial fishing and coastal development for security reasons, they often harbor pristine reef ecosystems
+                            </p>
+<p class="text-sm text-slate-700">
+                               <strong> * Industrial Infrastructure Safety Zones </strong>: Areas around offshore oil platforms, wind farms, or subsea cables where anchoring and fishing are prohibited for safety. These act as de facto no-take zones, providing a refuge for fish populations.
+                            </p>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<section id="resources">
+    <div class="mb-8 border-l-4 border-coral-500 pl-4">
+        <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">Further Learning</h2>
+        <p class="text-slate-500 text-sm">Explore how communities across the Coral Triangle safeguard their seas</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+        <!-- Video 1 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <a href="https://www.youtube.com/watch?v=AfANgYbcGP4" target="_blank" class="block relative group">
+                <img 
+                    src="https://img.youtube.com/vi/AfANgYbcGP4/maxresdefault.jpg" 
+                    alt="Video 1 thumbnail"
+                    class="w-full aspect-video object-cover">
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition">
+                    <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+                        <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+            <div class="p-4">
+                <h3 class="font-bold text-slate-800 text-sm">Gwala Rising in the Bwanabwana Islands</h3>
+                <p class="text-xs text-slate-500 mt-1">The community of Anagusa Island in Papua New Guinea is combating the effects of climate change and protecting the coral reefs they rely on using gwala: the traditional practice of setting aside a reef or forest area to allow the ecosystem to recover. Gwala is helping the community of Anagusa Island prosper - empowering men and women with improved access to food and livelihoods.</p>
+            </div>
+        </div>
+        <!-- Video 2 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <a href="https://www.youtube.com/watch?v=Zx6OS2zU2LM" target="_blank" class="block relative group">
+                <img 
+                    src="https://img.youtube.com/vi/Zx6OS2zU2LM/maxresdefault.jpg" 
+                    alt="Video 2 thumbnail"
+                    class="w-full aspect-video object-cover">
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition">
+                    <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+                        <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+            <div class="p-4">
+                <h3 class="font-bold text-slate-800 text-sm">Sasi Opening in Ay Island</h3>
+                <p class="text-xs text-slate-500 mt-1">Customary "Sasi" is Traditional closures in Eastern Part of Indonesia are primarily food security and harvest management measures. However, the secondary objective—protecting reef health—is vital for the long-term sustainability of those resources.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- KNOWLEDGE CHECK SECTION -->
+<!-- Paste this entire block just before your </main> closing tag -->
+
+<section id="knowledge-check" class="pb-8">
+    <div class="mb-8 border-l-4 border-coral-500 pl-4">
+        <h2 class="text-2xl font-bold text-ocean-900 uppercase tracking-tight">Knowledge Check</h2>
+        <p class="text-slate-500 text-sm italic">Test your understanding of OECMs and how they differ from MPAs.</p>
+    </div>
+
+    <!-- ACTIVITY 1: Drag & Drop Matching -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="px-3 py-1 rounded-full bg-ocean-100 text-ocean-700 text-xs font-bold">ACTIVITY 1</span>
+            <h3 class="font-bold text-slate-800 text-lg">Drag & Drop Matching</h3>
+        </div>
+        <p class="text-sm text-slate-500 mb-6">Drag each statement from the left and drop it onto the correct category on the right.</p>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Draggable Items -->
+            <div class="lg:w-1/2">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Statements</p>
+                <div id="drag-source" class="space-y-2">
+                    <div draggable="true" data-answer="MPA" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-ocean-400 hover:bg-ocean-50 transition-all select-none" data-id="1">
+                        Requires formal legal gazetting by the state.
+                    </div>
+                    <div draggable="true" data-answer="OECM" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-coral-400 hover:bg-coral-50 transition-all select-none" data-id="2">
+                        Conservation is a co-benefit, not the primary goal.
+                    </div>
+                    <div draggable="true" data-answer="MPA" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-ocean-400 hover:bg-ocean-50 transition-all select-none" data-id="3">
+                        Biodiversity protection is the explicit primary mandate.
+                    </div>
+                    <div draggable="true" data-answer="OECM" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-coral-400 hover:bg-coral-50 transition-all select-none" data-id="4">
+                        Sasi closures in Maluku, Indonesia.
+                    </div>
+                    <div draggable="true" data-answer="MPA" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-ocean-400 hover:bg-ocean-50 transition-all select-none" data-id="5">
+                        Enforcement relies on state rangers and national regulations.
+                    </div>
+                    <div draggable="true" data-answer="OECM" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-coral-400 hover:bg-coral-50 transition-all select-none" data-id="6">
+                        Recognized based on sustained ecological impact, not legal status.
+                    </div>
+                    <div draggable="true" data-answer="MPA" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-ocean-400 hover:bg-ocean-50 transition-all select-none" data-id="7">
+                        Listed in formal national protected area databases (e.g. WDPA).
+                    </div>
+                    <div draggable="true" data-answer="OECM" class="drag-item bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 cursor-grab active:cursor-grabbing hover:border-coral-400 hover:bg-coral-50 transition-all select-none" data-id="8">
+                        Can be governed by indigenous communities, NGOs, or private entities.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drop Zones -->
+            <div class="lg:w-1/2 flex flex-col gap-4">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Drop Zones</p>
+                <!-- MPA Zone -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-3 h-3 rounded-full bg-ocean-500 inline-block"></span>
+                        <span class="font-bold text-ocean-800 text-sm">Marine Protected Area (MPA)</span>
+                    </div>
+                    <div id="drop-MPA" data-zone="MPA" class="drop-zone min-h-[120px] bg-ocean-50 border-2 border-dashed border-ocean-200 rounded-xl p-3 space-y-2 transition-all">
+                        <p class="text-xs text-ocean-300 text-center mt-4 zone-placeholder">Drop MPA statements here</p>
+                    </div>
+                </div>
+                <!-- OECM Zone -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-3 h-3 rounded-full bg-coral-500 inline-block"></span>
+                        <span class="font-bold text-coral-800 text-sm">OECM</span>
+                    </div>
+                    <div id="drop-OECM" data-zone="OECM" class="drop-zone min-h-[120px] bg-coral-50 border-2 border-dashed border-coral-200 rounded-xl p-3 space-y-2 transition-all">
+                        <p class="text-xs text-coral-300 text-center mt-4 zone-placeholder">Drop OECM statements here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+            <button id="check-drag" class="bg-ocean-900 hover:bg-ocean-800 text-white px-6 py-2 rounded-xl text-sm font-semibold transition">Check Answers</button>
+            <button id="reset-drag" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-xl text-sm font-semibold transition">Reset</button>
+        </div>
+        <div id="drag-feedback" class="mt-4 hidden"></div>
+    </div>
+
+    <!-- ACTIVITY 2: Fill in the Blank -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="px-3 py-1 rounded-full bg-coral-100 text-coral-700 text-xs font-bold">ACTIVITY 2</span>
+            <h3 class="font-bold text-slate-800 text-lg">Fill in the Blanks</h3>
+        </div>
+        <p class="text-sm text-slate-500 mb-2">Complete the paragraph using words from the word bank. Each word is used once.</p>
+
+        <!-- Word Bank -->
+        <div class="mb-6">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Word Bank</p>
+            <div id="word-bank" class="flex flex-wrap gap-2">
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="geographically defined">geographically defined</span>
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="primary">primary</span>
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="positive and sustained">positive and sustained</span>
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="verified">verified</span>
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="outside">outside</span>
+                <span class="word-chip cursor-pointer bg-seagrass-100 text-seagrass-700 border border-seagrass-200 px-3 py-1 rounded-full text-sm font-medium hover:bg-seagrass-200 transition select-none" data-word="governance">governance</span>
+            </div>
+        </div>
+
+        <!-- Paragraph with Blanks -->
+        <div class="bg-slate-50 rounded-xl p-6 text-sm text-slate-700 leading-loose border border-slate-100">
+            <p>
+                An OECM is a 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[160px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="geographically defined" data-index="0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                area located 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[80px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="outside" data-index="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                a formally designated Protected Area. It must have a clear 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[120px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="governance" data-index="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                structure and deliver 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[180px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="positive and sustained" data-index="3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                long-term biodiversity outcomes. Unlike an MPA, conservation does not need to be the 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[80px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="primary" data-index="4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                objective — but conservation outcomes must be 
+                <span class="blank-slot inline-block border-b-2 border-slate-400 min-w-[80px] mx-1 px-2 py-0.5 rounded bg-white text-center text-ocean-700 font-semibold cursor-pointer hover:border-ocean-400 transition" data-answer="verified" data-index="5">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                through evidence.
+            </p>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+            <button id="check-blanks" class="bg-ocean-900 hover:bg-ocean-800 text-white px-6 py-2 rounded-xl text-sm font-semibold transition">Check Answers</button>
+            <button id="reset-blanks" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-xl text-sm font-semibold transition">Reset</button>
+        </div>
+        <div id="blanks-feedback" class="mt-4 hidden"></div>
+    </div>
+</section>
+
+<style>
+    .drag-item.dragging { opacity: 0.4; }
+    .drop-zone.drag-over { border-color: #0ea5e9; background-color: #e0f2fe; }
+    .drag-item.correct { background-color: #f0fdf4; border-color: #22c55e; color: #15803d; }
+    .drag-item.incorrect { background-color: #fff1f2; border-color: #f43f5e; color: #be123c; }
+    .blank-slot.filled { border-color: #0ea5e9; background-color: #e0f2fe; }
+    .blank-slot.correct-blank { border-color: #22c55e; background-color: #f0fdf4; color: #15803d; }
+    .blank-slot.incorrect-blank { border-color: #f43f5e; background-color: #fff1f2; color: #be123c; }
+    .word-chip.used { opacity: 0.35; pointer-events: none; text-decoration: line-through; }
+</style>
+
+<script>
+(function() {
+    // ─── DRAG & DROP ───────────────────────────────────────────────
+    const explanations = {
+        "1": "MPAs must be formally gazetted — recorded in national legal instruments like government regulations or ministerial decrees.",
+        "2": "The defining feature of OECMs: conservation is delivered as a secondary or ancillary outcome, not the stated management goal.",
+        "3": "An MPA's primary mandate is explicitly biodiversity or habitat protection — this is what separates it from an OECM.",
+        "4": "Sasi is a traditional resource closure practiced in Maluku. It qualifies as an OECM because it achieves reef conservation as a co-benefit of harvest management.",
+        "5": "MPAs depend on state enforcement infrastructure — rangers, patrol vessels, and legal penalties — which is why underfunded MPAs become 'paper parks'.",
+        "6": "OECM recognition under CBD Decision 14/8 is outcome-based: the area must demonstrate verified, sustained biodiversity outcomes — legal status alone is insufficient.",
+        "7": "MPAs are listed in formal databases like the World Database on Protected Areas (WDPA), managed by IUCN and UNEP-WCMC.",
+        "8": "OECMs embrace governance plurality — indigenous communities, local organizations, private landowners, and NGOs can all be recognized as OECM managers."
+    };
+
+    const fillExplanations = {
+        "geographically defined": "CBD Decision 14/8 requires a clear spatial boundary — the area must be mappable and delimited.",
+        "outside": "By definition, an OECM cannot already be a Protected Area — it must exist outside the formal PA network.",
+        "governance": "There must be a legitimate, identifiable entity responsible for managing the area — whether state, community, or private.",
+        "positive and sustained": "Outcomes must be both positive (biodiversity is maintained or improving) and sustained (long-term, not temporary).",
+        "primary": "This is the critical distinction from MPAs: conservation intent does not need to be the primary driver — it can be secondary or ancillary.",
+        "verified": "Unlike MPAs which are designation-based, OECMs require evidence of actual conservation outcomes."
+    };
+
+    let draggedItem = null;
+
+    document.querySelectorAll('.drag-item').forEach(item => {
+        item.addEventListener('dragstart', e => {
+            draggedItem = item;
+            setTimeout(() => item.classList.add('dragging'), 0);
+        });
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            draggedItem = null;
+        });
+    });
+
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        zone.addEventListener('dragover', e => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (!draggedItem) return;
+            const placeholder = zone.querySelector('.zone-placeholder');
+            if (placeholder) placeholder.remove();
+            zone.appendChild(draggedItem);
+        });
+    });
+
+    document.getElementById('check-drag').addEventListener('click', () => {
+        let correct = 0;
+        const total = 8;
+        let feedbackHTML = '<div class="space-y-2">';
+
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            const zone_name = zone.dataset.zone;
+            zone.querySelectorAll('.drag-item').forEach(item => {
+                const isCorrect = item.dataset.answer === zone_name;
+                item.classList.remove('correct', 'incorrect');
+                item.classList.add(isCorrect ? 'correct' : 'incorrect');
+                if (isCorrect) correct++;
+                const icon = isCorrect ? '✓' : '✗';
+                const color = isCorrect ? 'text-green-700' : 'text-red-600';
+                feedbackHTML += `<div class="text-xs ${color}"><strong>${icon} "${item.textContent.trim()}"</strong> — ${explanations[item.dataset.id]}</div>`;
+            });
+        });
+
+        // Check items still in source
+        document.querySelectorAll('#drag-source .drag-item').forEach(item => {
+            feedbackHTML += `<div class="text-xs text-slate-400">— "${item.textContent.trim()}" was not placed.</div>`;
+        });
+
+        feedbackHTML += '</div>';
+        const score = Math.round((correct / total) * 100);
+        const scoreColor = score >= 75 ? 'bg-green-50 border-green-200 text-green-800' : score >= 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-red-50 border-red-200 text-red-800';
+
+        const fb = document.getElementById('drag-feedback');
+        fb.className = `mt-4 p-4 rounded-xl border ${scoreColor}`;
+        fb.innerHTML = `<p class="font-bold text-sm mb-3">Score: ${correct}/${total} (${score}%)</p>${feedbackHTML}`;
+        fb.classList.remove('hidden');
+    });
+
+    document.getElementById('reset-drag').addEventListener('click', () => {
+        const source = document.getElementById('drag-source');
+        document.querySelectorAll('.drag-item').forEach(item => {
+            item.classList.remove('correct', 'incorrect');
+            source.appendChild(item);
+        });
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.innerHTML = `<p class="text-xs ${zone.dataset.zone === 'MPA' ? 'text-ocean-300' : 'text-coral-300'} text-center mt-4 zone-placeholder">Drop ${zone.dataset.zone} statements here</p>`;
+        });
+        const fb = document.getElementById('drag-feedback');
+        fb.className = 'mt-4 hidden';
+        fb.innerHTML = '';
+    });
+
+    // ─── FILL IN THE BLANK ─────────────────────────────────────────
+    let selectedWord = null;
+    let selectedBlank = null;
+    const blankAnswers = {};
+
+    document.querySelectorAll('.word-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (chip.classList.contains('used')) return;
+            document.querySelectorAll('.word-chip').forEach(c => c.style.outline = '');
+            selectedWord = chip.dataset.word;
+            chip.style.outline = '2px solid #0d9488';
+
+            // If a blank is already selected, fill it immediately
+            if (selectedBlank !== null) {
+                fillBlank(selectedBlank, selectedWord, chip);
+                selectedWord = null;
+                selectedBlank = null;
+                chip.style.outline = '';
+            }
+        });
+    });
+
+    document.querySelectorAll('.blank-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+            const idx = slot.dataset.index;
+
+            // If blank already filled, return word to bank
+            if (blankAnswers[idx]) {
+                const oldWord = blankAnswers[idx];
+                document.querySelectorAll('.word-chip').forEach(c => {
+                    if (c.dataset.word === oldWord) c.classList.remove('used');
+                });
+                delete blankAnswers[idx];
+                slot.textContent = '\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0';
+                slot.classList.remove('filled', 'correct-blank', 'incorrect-blank');
+                return;
+            }
+
+            if (selectedWord) {
+                const chip = document.querySelector(`.word-chip[data-word="${selectedWord}"]`);
+                fillBlank(idx, selectedWord, chip);
+                selectedWord = null;
+                selectedBlank = null;
+                document.querySelectorAll('.word-chip').forEach(c => c.style.outline = '');
+            } else {
+                // Highlight selected blank
+                document.querySelectorAll('.blank-slot').forEach(s => s.style.outline = '');
+                slot.style.outline = '2px solid #0ea5e9';
+                selectedBlank = idx;
+            }
+        });
+    });
+
+    function fillBlank(idx, word, chip) {
+        const slot = document.querySelector(`.blank-slot[data-index="${idx}"]`);
+        if (!slot) return;
+        blankAnswers[idx] = word;
+        slot.textContent = word;
+        slot.classList.add('filled');
+        slot.classList.remove('correct-blank', 'incorrect-blank');
+        slot.style.outline = '';
+        if (chip) chip.classList.add('used');
+    }
+
+    document.getElementById('check-blanks').addEventListener('click', () => {
+        let correct = 0;
+        const total = 6;
+        let feedbackHTML = '<div class="space-y-2">';
+
+        document.querySelectorAll('.blank-slot').forEach(slot => {
+            const idx = slot.dataset.index;
+            const answer = slot.dataset.answer;
+            const given = blankAnswers[idx];
+            slot.classList.remove('correct-blank', 'incorrect-blank', 'filled');
+
+            if (given === answer) {
+                correct++;
+                slot.classList.add('correct-blank');
+                feedbackHTML += `<div class="text-xs text-green-700"><strong>✓ "${answer}"</strong> — ${fillExplanations[answer]}</div>`;
+            } else {
+                slot.classList.add('incorrect-blank');
+                const givenText = given ? `You answered: "${given}". ` : 'Not answered. ';
+                feedbackHTML += `<div class="text-xs text-red-600"><strong>✗ Correct: "${answer}"</strong> — ${givenText}${fillExplanations[answer]}</div>`;
+            }
+        });
+
+        feedbackHTML += '</div>';
+        const score = Math.round((correct / total) * 100);
+        const scoreColor = score >= 75 ? 'bg-green-50 border-green-200 text-green-800' : score >= 50 ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-red-50 border-red-200 text-red-800';
+
+        const fb = document.getElementById('blanks-feedback');
+        fb.className = `mt-4 p-4 rounded-xl border ${scoreColor}`;
+        fb.innerHTML = `<p class="font-bold text-sm mb-3">Score: ${correct}/${total} (${score}%)</p>${feedbackHTML}`;
+        fb.classList.remove('hidden');
+    });
+
+    document.getElementById('reset-blanks').addEventListener('click', () => {
+        Object.keys(blankAnswers).forEach(k => delete blankAnswers[k]);
+        document.querySelectorAll('.blank-slot').forEach(slot => {
+            slot.textContent = '\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0';
+            slot.classList.remove('filled', 'correct-blank', 'incorrect-blank');
+            slot.style.outline = '';
+        });
+        document.querySelectorAll('.word-chip').forEach(c => {
+            c.classList.remove('used');
+            c.style.outline = '';
+        });
+        selectedWord = null;
+        selectedBlank = null;
+        const fb = document.getElementById('blanks-feedback');
+        fb.className = 'mt-4 hidden';
+        fb.innerHTML = '';
+    });
+})();
+</script>
+</main>
+    <footer class="bg-slate-900 text-slate-400 py-12 text-center text-xs">
+        <div class="max-w-6xl mx-auto px-4">
             <p>© 2026. Faculty of Biology Universitas Gadjah Mada - Ecology and Conservation Lab - Marine Connectivity and Resilience Research Group.</p>
         </div>
     </footer>
 
     <script>
-        const locations = [
-            { name: "North Reef", type: "MPA", x: 20, y: 80 },
-            { name: "South Atoll", type: "MPA", x: 80, y: 30 },
-            { name: "Coastal Bay", type: "Non-MPA", x: 30, y: 50 },
-            { name: "Deep Seamount", type: "Non-MPA", x: 70, y: 90 },
-            { name: "Eastern Shoal", type: "Non-MPA", x: 60, y: 40 },
-            { name: "Estuary Mouth", type: "Non-MPA", x: 40, y: 20 }
-        ];
+        // Tooltip Content Mapping
+        const labelDescriptions = {
+            "Conservation as Purpose": "Measures if biodiversity protection is the primary management intent (High for MPAs, Variable for OECMs).",
+            "Strict Legal Gazetting": "Formal recognition via national laws or state-run protected area databases.",
+            "Livelihood/Cultural Goals": "Extent to which social benefits, food security, and spiritual heritage are integrated into core management.",
+            "Positive Conservation Outcome": "Verifiable proof of sustained, long-term biodiversity health (Mandatory for OECMs).",
+            "Governance Flexibility": "Ability to adapt rules based on local community needs and environmental feedback loops.",
+            "Institutional Plurality": "Active involvement and legal recognition of non-state actors (Communities, NGOs, Private)."
+        };
 
-        const distanceMatrix = locations.map((l1) => 
-            locations.map((l2) => 
-                Math.sqrt(Math.pow(l1.x - l2.x, 2) + Math.pow(l1.y - l2.y, 2))
-            )
-        );
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            const tooltipBox = document.getElementById('chart-tooltip');
 
-        let currentPLD = 30;
-        let selectedRegionIndex = 0;
-        let currentMatrix = [];
-        let radarChartInstance, mapCtx, mapCanvas;
-
-        function calculateConnectivityMatrix(pld) {
-            const decayRate = 1 / pld; 
-            return locations.map((_, i) => {
-                return locations.map((_, j) => {
-                    if (i === j) return Math.max(0.1, 1.0 - (pld * 0.012)); 
-                    const distance = distanceMatrix[i][j];
-                    let probability = Math.exp(-decayRate * distance);
-                    let directionalBias = (locations[i].x < locations[j].x || locations[i].y > locations[j].y) ? 1.2 : 0.6;
-                    return Math.min(1.0, probability * directionalBias);
-                });
-            });
-        }
-
-        function calculateMetrics(matrix) {
-            return locations.map((_, i) => {
-                let outDegree = 0, inDegree = 0;
-                for (let j = 0; j < locations.length; j++) {
-                    if (i !== j) {
-                        outDegree += matrix[i][j];
-                        inDegree += matrix[j][i];
-                    }
-                }
-                return { outDegree, inDegree, selfRetention: matrix[i][i] };
-            });
-        }
-
-        function updateHeatmap(matrix) {
-            const labels = locations.map(l => l.type === "MPA" ? `⭐ ${l.name}` : l.name);
-            const labelColors = locations.map(l => l.type === "MPA" ? '#1d4ed8' : '#64748b');
-
-            const trace = {
-                z: matrix,
-                x: labels,
-                y: labels,
-                type: 'heatmap',
-                colorscale: [[0, '#ffffff'], [0.2, '#ccfbf1'], [0.5, '#14b8a6'], [1, '#0f766e']], 
-                hoverinfo: 'x+y+z',
-                texttemplate: "%{z:.2f}", 
-                textfont: { family: 'Inter, sans-serif', size: 11 },
-                colorbar: { title: 'Prob.', thickness: 15, len: 0.8 }
+            const radarData = {
+                labels: [
+                    'Conservation as Purpose',
+                    'Strict Legal Gazetting',
+                    'Livelihood/Cultural Goals',
+                    'Positive Conservation Outcome',
+                    'Governance Flexibility',
+                    'Institutional Plurality'
+                ],
+                datasets: [{
+                    label: 'Marine Protected Area (MPA)',
+                    data: [100, 100, 70, 100, 40, 30],
+                    fill: true,
+                    backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                    borderColor: '#0ea5e9',
+                    pointBackgroundColor: '#0ea5e9',
+                    borderWidth: 2,
+                    pointRadius: 4
+                }, {
+                    label: 'OECM',
+                    data: [40, 30, 90, 100, 90, 100],
+                    fill: true,
+                    backgroundColor: 'rgba(244, 63, 94, 0.2)',
+                    borderColor: '#f43f5e',
+                    pointBackgroundColor: '#f43f5e',
+                    borderWidth: 2,
+                    pointRadius: 4
+                }]
             };
 
-            const layout = {
-                margin: { t: 20, r: 20, b: 80, l: 120 },
-                xaxis: { tickangle: -45, fixedrange: true, tickfont: { color: labelColors } },
-                yaxis: { autorange: 'reversed', fixedrange: true, tickfont: { color: labelColors, weight: 'bold' } },
-                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { family: 'Inter, sans-serif' }
-            };
-
-            Plotly.react('heatmap-div', [trace], layout, {responsive: true, displayModeBar: false});
-        }
-
-        function initMapCanvas() {
-            mapCanvas = document.getElementById('map-canvas');
-            mapCtx = mapCanvas.getContext('2d');
-            const resize = () => {
-                const wrapper = document.getElementById('map-wrapper');
-                mapCanvas.width = wrapper.clientWidth;
-                mapCanvas.height = wrapper.clientHeight;
-                drawNetworkMap();
-            };
-            window.addEventListener('resize', resize);
-            resize();
-        }
-
-        function drawArrow(ctx, fromx, fromy, tox, toy, weight) {
-            const headlen = 8 * weight;
-            const dx = tox - fromx, dy = toy - fromy;
-            const angle = Math.atan2(dy, dx);
-            const offset = 18; 
-            const x1 = fromx + offset * Math.cos(angle), y1 = fromy + offset * Math.sin(angle);
-            const x2 = tox - offset * Math.cos(angle), y2 = toy - offset * Math.sin(angle);
-            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x2, y2);
-            ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
-            ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
-            ctx.closePath(); ctx.fill();
-        }
-
-        function drawNetworkMap() {
-            if (!currentMatrix.length) return;
-            const w = mapCanvas.width, h = mapCanvas.height;
-            mapCtx.clearRect(0, 0, w, h);
-            const getX = (v) => 50 + (v / 100) * (w - 100);
-            const getY = (v) => 50 + ((100 - v) / 100) * (h - 100);
-
-            currentMatrix.forEach((row, i) => {
-                row.forEach((prob, j) => {
-                    if (i !== j && prob > 0.1) {
-                        const x1 = getX(locations[i].x), y1 = getY(locations[i].y);
-                        const x2 = getX(locations[j].x), y2 = getY(locations[j].y);
-                        const isSelected = (i === selectedRegionIndex || j === selectedRegionIndex);
-                        mapCtx.strokeStyle = isSelected ? `rgba(14, 165, 233, ${prob + 0.2})` : `rgba(148, 163, 184, ${prob * 0.4})`;
-                        mapCtx.fillStyle = isSelected ? `rgba(14, 165, 233, ${prob + 0.2})` : `rgba(148, 163, 184, ${prob * 0.4})`;
-                        mapCtx.lineWidth = isSelected ? prob * 6 : prob * 3;
-                        drawArrow(mapCtx, x1, y1, x2, y2, mapCtx.lineWidth);
-                    }
-                });
-            });
-
-            locations.forEach((loc, i) => {
-                const x = getX(loc.x), y = getY(loc.y);
-                mapCtx.beginPath();
-                mapCtx.arc(x, y, 12 + (currentMatrix[i][i] * 10), 0, Math.PI * 2);
-                mapCtx.fillStyle = loc.type === "MPA" ? "#2563eb" : "#94a3b8";
-                mapCtx.fill();
-                mapCtx.strokeStyle = (i === selectedRegionIndex) ? "#000" : "#fff";
-                mapCtx.lineWidth = (i === selectedRegionIndex) ? 3 : 2;
-                mapCtx.stroke();
-                mapCtx.fillStyle = loc.type === "MPA" ? "#1e40af" : "#475569";
-                mapCtx.font = "bold 11px Inter";
-                mapCtx.textAlign = "center";
-                mapCtx.fillText(loc.name + (loc.type === "MPA" ? " ⭐" : ""), x, y + 35);
-            });
-        }
-
-        function initCharts() {
-            const ctx = document.getElementById('radar-chart').getContext('2d');
-            radarChartInstance = new Chart(ctx, {
+            const comparisonChart = new Chart(ctx, {
                 type: 'radar',
-                data: {
-                    labels: ['Larval Export', 'Larval Import', 'Self-Retention', 'Network Centrality', 'Ecological Synergy/Contribution'],
-                    datasets: [{ backgroundColor: 'rgba(168, 85, 247, 0.2)', borderColor: '#a855f7', data: [0, 0, 0, 0, 0], borderWidth: 3, pointBackgroundColor: '#a855f7' }]
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    scales: { r: { ticks: { display: false }, min: 0, max: 4, grid: { color: '#e2e8f0' }, pointLabels: { font: { size: 10, weight: 'bold' } } } }, 
-                    plugins: { legend: { display: false } } 
-                }
-            });
-        }
-
-        function updateRadar(index, metrics) {
-            const m = metrics[index];
-            radarChartInstance.data.datasets[0].data = [m.outDegree * 1.5, m.inDegree * 1.5, m.selfRetention * 4, (m.outDegree + m.inDegree) * 1.1, 2.5];
-            radarChartInstance.update();
-            const roleDesc = document.getElementById('role-description');
-            roleDesc.innerHTML = `<h4 class="font-black text-slate-800 text-lg mb-1">${locations[index].name} ${locations[index].type === "MPA" ? '<span class="text-blue-600">(MPA ⭐)</span>' : '<span class="text-slate-400">(Unprotected)</span>'}</h4><p class="text-sm text-slate-600">Acts as a <strong>${m.outDegree > m.inDegree ? 'Larval Source' : 'Larval Sink'}</strong> with a local retention rate of <strong>${(m.selfRetention * 100).toFixed(0)}%</strong>.</p>`;
-        }
-
-        function updateAll(pld) {
-            currentPLD = pld;
-            document.getElementById('pld-value').innerText = pld;
-            currentMatrix = calculateConnectivityMatrix(pld);
-            updateHeatmap(currentMatrix);
-            const metrics = calculateMetrics(currentMatrix);
-            updateRadar(selectedRegionIndex, metrics);
-            drawNetworkMap();
-        }
-
-        function initQuiz() {
-            const quizData = [
-                {
-                    question: "Set the PLD slider to 45 days. Look at the lines (edges) on the Spatial Network Map. Which statement best describes what happens to the connections as PLD increases from 15 to 45 days?",
-                    options: [
-                        "The lines disappear completely.",
-                        "Only the connections to Unprotected areas grow thicker.",
-                        "More lines appear and existing lines grow thicker, indicating a wider and stronger exchange of larvae.",
-                        "The lines turn into a single straight path from top to bottom."
-                    ],
-                    correct: 2,
-                    explanation: "As PLD increases, larvae remain in the water column longer, enabling them to travel much further and connect more distant reefs."
-                },
-                {
-                    question: "Move the PLD slider down to 5 days. Look at the Spatial Network Map. What happens to the colored circles (nodes), and what does this represent?",
-                    options: [
-                        "They become very small, meaning larvae are drifting far away.",
-                        "They become very large, representing high local self-retention because larvae settle quickly.",
-                        "They disappear entirely because marine species cannot survive with a 5-day PLD.",
-                        "All the circles shift to the center of the map."
-                    ],
-                    correct: 1,
-                    explanation: "A short PLD means larvae settle almost immediately near where they were spawned, resulting in high self-retention and larger visual nodes."
-                },
-                {
-                    question: "Adjust the PLD slider to 20 days. Look at the Connectivity Probability Matrix. Excluding self-retention (the diagonal line), which of these pathways shows the highest probability of larval transfer?",
-                    options: [
-                        "From Coastal Bay to North Reef",
-                        "From Eastern Shoal to South Atoll",
-                        "From Deep Seamount to Estuary Mouth",
-                        "From South Atoll to North Reef"
-                    ],
-                    correct: 1,
-                    explanation: "By checking the matrix at 20 days, you'll see a darker square at the intersection of Eastern Shoal (Source) and South Atoll (Destination) compared to the others listed."
-                },
-                {
-                    question: "Set the PLD slider to 60 days. Select 'North Reef' in the Regional Role Analysis. Look at the Radar Chart. What happens to its 'Network Centrality' compared to a 5-day PLD?",
-                    options: [
-                        "It drops to zero.",
-                        "It remains exactly the same.",
-                        "It expands significantly towards the outer edge, showing high integration.",
-                        "It turns negative."
-                    ],
-                    correct: 2,
-                    explanation: "High dispersal (60d) integrates a reef into the broader network, increasing its importance as a connectivity hub (Centrality)."
-                }
-            ];
-            const container = document.getElementById('quiz-container');
-            quizData.forEach((q, index) => {
-                const qDiv = document.createElement('div');
-                qDiv.className = "border-b border-slate-200 pb-6 last:border-0 last:pb-0";
-                // Changed question heading size to text-base (16px) to match ecological profile text
-                qDiv.innerHTML = `<h3 class="font-bold text-base text-slate-800 mb-4">${index + 1}. ${q.question}</h3>`;
-                const optionsGrid = document.createElement('div');
-                optionsGrid.className = "grid grid-cols-1 gap-3";
-                const explBox = document.createElement('div');
-                // Added text-sm to feedback box
-                explBox.className = "mt-4 p-4 rounded-lg text-sm hidden";
-                q.options.forEach((opt, optIndex) => {
-                    const btn = document.createElement('button');
-                    // Changed option button font size to text-sm (14px) to match ecological profile content
-                    btn.className = "quiz-option text-left px-4 py-3 border border-slate-200 rounded-lg hover:border-cyan-500 hover:bg-cyan-50 font-medium text-sm text-slate-700";
-                    btn.innerText = opt;
-                    btn.onclick = () => {
-                        Array.from(optionsGrid.children).forEach(b => b.disabled = true);
-                        if (optIndex === q.correct) {
-                            btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
-                            explBox.className = "mt-4 p-4 rounded-lg text-sm bg-green-50 text-green-800 border border-green-200";
-                            explBox.innerHTML = `<strong>Correct!</strong> ${q.explanation}`;
-                        } else {
-                            btn.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
-                            optionsGrid.children[q.correct].classList.add('bg-green-100', 'border-green-500');
-                            explBox.className = "mt-4 p-4 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200";
-                            explBox.innerHTML = `<strong>Incorrect.</strong> ${q.explanation}`;
+                data: radarData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true, color: '#f1f5f9' },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false },
+                            pointLabels: {
+                                font: { size: 10, weight: '600', family: "'Inter', sans-serif" },
+                                color: '#64748b',
+                                padding: 15
+                            }
                         }
-                        explBox.classList.remove('hidden');
-                    };
-                    optionsGrid.appendChild(btn);
-                });
-                qDiv.appendChild(optionsGrid); qDiv.appendChild(explBox); container.appendChild(qDiv);
-            });
-        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
+                        tooltip: { enabled: true }
+                    },
+                    onHover: (event, chartElement) => {
+                        const x = event.x;
+                        const y = event.y;
+                        tooltipBox.style.display = 'none';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initMapCanvas(); initCharts(); initQuiz();
-            const select = document.getElementById('region-selector');
-            const mpaGroup = document.createElement('optgroup');
-            mpaGroup.label = "PROTECTED AREAS (MPA ⭐)";
-            const nonMpaGroup = document.createElement('optgroup');
-            nonMpaGroup.label = "UNPROTECTED AREAS";
-
-            locations.forEach((l, i) => {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.innerText = l.name;
-                if (l.type === "MPA") mpaGroup.appendChild(opt);
-                else nonMpaGroup.appendChild(opt);
-            });
-            select.appendChild(mpaGroup);
-            select.appendChild(nonMpaGroup);
-
-            updateAll(30);
-            document.getElementById('pld-slider').addEventListener('input', (e) => updateAll(parseInt(e.target.value)));
-            document.getElementById('region-selector').addEventListener('change', (e) => {
-                selectedRegionIndex = parseInt(e.target.value);
-                updateAll(parseInt(document.getElementById('pld-slider').value));
+                        const scale = comparisonChart.scales.r;
+                        // Manual check for point label hover
+                        scale._pointLabels.forEach((label, index) => {
+                            const labelText = radarData.labels[index];
+                            // Get precise position of the label
+                            const labelPos = scale.getPointPosition(index, scale.drawingArea + 20);
+                            
+                            const dx = x - labelPos.x;
+                            const dy = y - labelPos.y;
+                            
+                            // Check distance for hover activation
+                            if (Math.abs(dx) < 70 && Math.abs(dy) < 20) {
+                                tooltipBox.style.display = 'block';
+                                tooltipBox.style.left = (event.native.pageX + 15) + 'px';
+                                tooltipBox.style.top = (event.native.pageY - 15) + 'px';
+                                tooltipBox.innerHTML = `<strong>${labelText}</strong><br>${labelDescriptions[labelText]}`;
+                            }
+                        });
+                    }
+                }
             });
         });
     </script>
